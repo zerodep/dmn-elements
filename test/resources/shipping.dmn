@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="shippingDefinitions" name="Shipping" namespace="https://example.com/dmn/shipping">
+  <inputData id="weightInput" name="Weight">
+    <variable id="weightVariable" name="Weight" typeRef="number" />
+  </inputData>
+  <inputData id="colorInput" name="Color">
+    <variable id="colorVariable" name="Color" typeRef="string" />
+  </inputData>
+  <decision id="shipping" name="Shipping">
+    <variable id="shippingVariable" name="Shipping" typeRef="string" />
+    <informationRequirement id="shippingRequiresWeight">
+      <requiredInput href="#weightInput" />
+    </informationRequirement>
+    <informationRequirement id="shippingRequiresColor">
+      <requiredInput href="#colorInput" />
+    </informationRequirement>
+    <decisionTable id="shippingTable" hitPolicy="FIRST">
+      <input id="weightTableInput" label="Weight">
+        <inputExpression id="weightInputExpression" typeRef="number">
+          <text>Weight</text>
+        </inputExpression>
+      </input>
+      <input id="colorTableInput" label="Color">
+        <inputExpression id="colorInputExpression" typeRef="string">
+          <text>Color</text>
+        </inputExpression>
+      </input>
+      <output id="methodOutput" name="method" typeRef="string" />
+      <rule id="letterRule">
+        <inputEntry id="letterWeightEntry">
+          <text>[0..5)</text>
+        </inputEntry>
+        <inputEntry id="letterColorEntry">
+          <text>not("red")</text>
+        </inputEntry>
+        <outputEntry id="letterMethod">
+          <text>"letter"</text>
+        </outputEntry>
+      </rule>
+      <rule id="parcelRule">
+        <inputEntry id="parcelWeightEntry">
+          <text>[0..5)</text>
+        </inputEntry>
+        <inputEntry id="parcelColorEntry">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="parcelMethod">
+          <text>"parcel"</text>
+        </outputEntry>
+      </rule>
+      <rule id="freightRule">
+        <inputEntry id="freightWeightEntry">
+          <text>&gt;= 5</text>
+        </inputEntry>
+        <inputEntry id="freightColorEntry">
+          <text>"green","blue"</text>
+        </inputEntry>
+        <outputEntry id="freightMethod">
+          <text>"freight"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="shippingDiagram">
+      <dmndi:DMNShape id="shippingShape" dmnElementRef="shipping">
+        <dc:Bounds height="80" width="180" x="190" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="weightInputShape" dmnElementRef="weightInput">
+        <dc:Bounds height="45" width="125" x="80" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="colorInputShape" dmnElementRef="colorInput">
+        <dc:Bounds height="45" width="125" x="360" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="shippingRequiresWeightEdge" dmnElementRef="shippingRequiresWeight">
+        <di:waypoint x="142" y="260" />
+        <di:waypoint x="235" y="160" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="shippingRequiresColorEdge" dmnElementRef="shippingRequiresColor">
+        <di:waypoint x="422" y="260" />
+        <di:waypoint x="325" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="diamondDefinitions" name="Diamond" namespace="https://example.com/dmn/diamond">
+  <decision id="base" name="Base">
+    <variable id="baseVariable" name="Base" />
+    <literalExpression id="baseExpression">
+      <text>Next()</text>
+    </literalExpression>
+  </decision>
+  <decision id="left" name="Left">
+    <variable id="leftVariable" name="Left" />
+    <informationRequirement id="leftRequiresBase">
+      <requiredDecision href="#base" />
+    </informationRequirement>
+    <literalExpression id="leftExpression">
+      <text>Base</text>
+    </literalExpression>
+  </decision>
+  <decision id="right" name="Right">
+    <variable id="rightVariable" name="Right" />
+    <informationRequirement id="rightRequiresBase">
+      <requiredDecision href="#base" />
+    </informationRequirement>
+    <literalExpression id="rightExpression">
+      <text>Base</text>
+    </literalExpression>
+  </decision>
+  <decision id="top" name="Top">
+    <variable id="topVariable" name="Top" />
+    <informationRequirement id="topRequiresLeft">
+      <requiredDecision href="#left" />
+    </informationRequirement>
+    <informationRequirement id="topRequiresRight">
+      <requiredDecision href="#right" />
+    </informationRequirement>
+    <literalExpression id="topExpression">
+      <text>Left = Right</text>
+    </literalExpression>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="diamondDiagram">
+      <dmndi:DMNShape id="topShape" dmnElementRef="top">
+        <dc:Bounds height="80" width="180" x="190" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="leftShape" dmnElementRef="left">
+        <dc:Bounds height="80" width="180" x="60" y="240" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="rightShape" dmnElementRef="right">
+        <dc:Bounds height="80" width="180" x="320" y="240" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="baseShape" dmnElementRef="base">
+        <dc:Bounds height="80" width="180" x="190" y="400" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="leftRequiresBaseEdge" dmnElementRef="leftRequiresBase">
+        <di:waypoint x="235" y="400" />
+        <di:waypoint x="150" y="320" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="rightRequiresBaseEdge" dmnElementRef="rightRequiresBase">
+        <di:waypoint x="325" y="400" />
+        <di:waypoint x="410" y="320" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="topRequiresLeftEdge" dmnElementRef="topRequiresLeft">
+        <di:waypoint x="150" y="240" />
+        <di:waypoint x="235" y="160" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="topRequiresRightEdge" dmnElementRef="topRequiresRight">
+        <di:waypoint x="410" y="240" />
+        <di:waypoint x="325" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

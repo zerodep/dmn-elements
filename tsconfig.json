@@ -1,0 +1,28 @@
+{
+  "include": ["src/**/*", "test/**/*", "types"],
+  "compilerOptions": {
+    "emitDeclarationOnly": true,
+    "sourceMap": false,
+    "lib": ["es2020"],
+    "target": "es2020",
+    "outDir": "./tmp/ignore",
+    "declaration": true,
+    "noEmitOnError": true,
+    "noErrorTruncation": true,
+    "allowJs": true,
+    "checkJs": false,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolveJsonModule": false,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "stripInternal": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "types": ["node", "chai", "mocha"],
+    "paths": {
+      "#types": ["./types/interfaces.d.ts"]
+    }
+  }
+}

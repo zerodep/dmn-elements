@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="pricingDefinitions" name="Pricing" namespace="https://example.com/dmn/pricing">
+  <inputData id="amountInput" name="Amount">
+    <variable id="amountVariable" name="Amount" typeRef="number" />
+  </inputData>
+  <decision id="discountRate" name="Discount rate">
+    <variable id="discountRateVariable" name="Discount rate" typeRef="number" />
+    <informationRequirement id="discountRateRequiresAmount">
+      <requiredInput href="#amountInput" />
+    </informationRequirement>
+    <literalExpression id="discountRateExpression">
+      <text>if Amount &gt; 100 then 0.1 else 0</text>
+    </literalExpression>
+  </decision>
+  <decision id="netPrice" name="Net price">
+    <variable id="netPriceVariable" name="Net price" typeRef="number" />
+    <informationRequirement id="netPriceRequiresAmount">
+      <requiredInput href="#amountInput" />
+    </informationRequirement>
+    <informationRequirement id="netPriceRequiresDiscountRate">
+      <requiredDecision href="#discountRate" />
+    </informationRequirement>
+    <literalExpression id="netPriceExpression">
+      <text>Amount - Amount * Discount rate</text>
+    </literalExpression>
+  </decision>
+  <decisionService id="pricingService" name="Pricing service">
+    <variable id="pricingServiceVariable" name="Pricing service" />
+    <outputDecision href="#netPrice" />
+    <encapsulatedDecision href="#discountRate" />
+    <inputData href="#amountInput" />
+  </decisionService>
+  <decision id="quote" name="Quote">
+    <variable id="quoteVariable" name="Quote" typeRef="number" />
+    <informationRequirement id="quoteRequiresAmount">
+      <requiredInput href="#amountInput" />
+    </informationRequirement>
+    <knowledgeRequirement id="quoteRequiresPricing">
+      <requiredKnowledge href="#pricingService" />
+    </knowledgeRequirement>
+    <literalExpression id="quoteExpression">
+      <text>Pricing service(Amount)</text>
+    </literalExpression>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="pricingDiagram">
+      <dmndi:DMNShape id="pricingServiceShape" dmnElementRef="pricingService">
+        <dc:Bounds height="320" width="320" x="400" y="60" />
+        <dmndi:DMNDecisionServiceDividerLine id="pricingServiceDivider">
+          <di:waypoint x="400" y="220" />
+          <di:waypoint x="720" y="220" />
+        </dmndi:DMNDecisionServiceDividerLine>
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="netPriceShape" dmnElementRef="netPrice">
+        <dc:Bounds height="80" width="180" x="470" y="100" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="discountRateShape" dmnElementRef="discountRate">
+        <dc:Bounds height="80" width="180" x="470" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="quoteShape" dmnElementRef="quote">
+        <dc:Bounds height="80" width="180" x="80" y="100" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="amountInputShape" dmnElementRef="amountInput">
+        <dc:Bounds height="45" width="125" x="107" y="460" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="quoteRequiresPricingEdge" dmnElementRef="quoteRequiresPricing">
+        <di:waypoint x="400" y="140" />
+        <di:waypoint x="260" y="140" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="quoteRequiresAmountEdge" dmnElementRef="quoteRequiresAmount">
+        <di:waypoint x="170" y="460" />
+        <di:waypoint x="170" y="180" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="discountRateRequiresAmountEdge" dmnElementRef="discountRateRequiresAmount">
+        <di:waypoint x="232" y="482" />
+        <di:waypoint x="470" y="320" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="netPriceRequiresAmountEdge" dmnElementRef="netPriceRequiresAmount">
+        <di:waypoint x="232" y="470" />
+        <di:waypoint x="470" y="170" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="netPriceRequiresDiscountRateEdge" dmnElementRef="netPriceRequiresDiscountRate">
+        <di:waypoint x="560" y="260" />
+        <di:waypoint x="560" y="180" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="loanDefinitions" name="Loan" namespace="https://example.com/dmn/loan">
+  <inputData id="amountInput" name="Amount">
+    <variable id="amountVariable" name="Amount" typeRef="number" />
+  </inputData>
+  <inputData id="rateInput" name="Rate">
+    <variable id="rateVariable" name="Rate" typeRef="number" />
+  </inputData>
+  <inputData id="yearsInput" name="Years">
+    <variable id="yearsVariable" name="Years" typeRef="number" />
+  </inputData>
+  <decision id="loanPayment" name="Loan payment">
+    <variable id="loanPaymentVariable" name="Loan payment" typeRef="number" />
+    <informationRequirement id="loanPaymentRequiresAmount">
+      <requiredInput href="#amountInput" />
+    </informationRequirement>
+    <informationRequirement id="loanPaymentRequiresRate">
+      <requiredInput href="#rateInput" />
+    </informationRequirement>
+    <informationRequirement id="loanPaymentRequiresYears">
+      <requiredInput href="#yearsInput" />
+    </informationRequirement>
+    <context id="loanPaymentContext">
+      <contextEntry id="monthlyRateEntry">
+        <variable id="monthlyRateVariable" name="MonthlyRate" typeRef="number" />
+        <literalExpression id="monthlyRateExpression"><text>Rate / 12</text></literalExpression>
+      </contextEntry>
+      <contextEntry id="monthsEntry">
+        <variable id="monthsVariable" name="Months" typeRef="number" />
+        <literalExpression id="monthsExpression"><text>Years * 12</text></literalExpression>
+      </contextEntry>
+      <contextEntry id="paymentEntry">
+        <literalExpression id="paymentExpression"><text>Amount * MonthlyRate / (1 - (1 + MonthlyRate) ** -Months)</text></literalExpression>
+      </contextEntry>
+    </context>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="loanDiagram">
+      <dmndi:DMNShape id="loanPaymentShape" dmnElementRef="loanPayment">
+        <dc:Bounds height="80" width="180" x="260" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="amountInputShape" dmnElementRef="amountInput">
+        <dc:Bounds height="45" width="125" x="80" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="rateInputShape" dmnElementRef="rateInput">
+        <dc:Bounds height="45" width="125" x="287" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="yearsInputShape" dmnElementRef="yearsInput">
+        <dc:Bounds height="45" width="125" x="500" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="loanPaymentRequiresAmountEdge" dmnElementRef="loanPaymentRequiresAmount">
+        <di:waypoint x="142" y="260" />
+        <di:waypoint x="305" y="160" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="loanPaymentRequiresRateEdge" dmnElementRef="loanPaymentRequiresRate">
+        <di:waypoint x="350" y="260" />
+        <di:waypoint x="350" y="160" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="loanPaymentRequiresYearsEdge" dmnElementRef="loanPaymentRequiresYears">
+        <di:waypoint x="562" y="260" />
+        <di:waypoint x="395" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

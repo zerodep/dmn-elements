@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="bonusDefinitions" name="Bonus" namespace="https://example.com/dmn/bonus" exporter="Camunda Modeler" exporterVersion="5.48.0">
+  <inputData id="amountInput" name="Amount">
+    <variable id="amountVariable" name="Amount" typeRef="double" />
+  </inputData>
+  <decision id="bonus" name="Bonus">
+    <variable id="bonusVariable" name="Bonus" />
+    <informationRequirement id="bonusRequiresAmount">
+      <requiredInput href="#amountInput" />
+    </informationRequirement>
+    <decisionTable id="bonusTable" hitPolicy="COLLECT">
+      <input id="amountTableInput" label="Amount">
+        <inputExpression id="amountInputExpression" typeRef="number">
+          <text>Amount</text>
+        </inputExpression>
+      </input>
+      <output id="bonusOutput" name="bonus" typeRef="number" />
+      <rule id="baseBonusRule">
+        <inputEntry id="baseBonusEntry">
+          <text>&gt; 0</text>
+        </inputEntry>
+        <outputEntry id="baseBonusAmount">
+          <text>10</text>
+        </outputEntry>
+      </rule>
+      <rule id="extraBonusRule">
+        <inputEntry id="extraBonusEntry">
+          <text>&gt; 100</text>
+        </inputEntry>
+        <outputEntry id="extraBonusAmount">
+          <text>20</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="bonusDiagram">
+      <dmndi:DMNShape id="bonusShape" dmnElementRef="bonus">
+        <dc:Bounds height="80" width="180" x="160" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="amountInputShape" dmnElementRef="amountInput">
+        <dc:Bounds height="45" width="125" x="187" y="240" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="bonusRequiresAmountEdge" dmnElementRef="bonusRequiresAmount">
+        <di:waypoint x="250" y="240" />
+        <di:waypoint x="250" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

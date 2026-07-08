@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="discountDefinitions" name="Discount" namespace="https://example.com/dmn/discount">
+  <inputData id="amountInput" name="Amount">
+    <variable id="amountVariable" name="Amount" typeRef="number" />
+  </inputData>
+  <businessKnowledgeModel id="applyDiscount" name="Apply discount">
+    <variable id="applyDiscountVariable" name="Apply discount" />
+    <encapsulatedLogic id="applyDiscountLogic" kind="FEEL">
+      <formalParameter id="amountParameter" name="amount" typeRef="number" />
+      <formalParameter id="rateParameter" name="rate" typeRef="number" />
+      <literalExpression id="applyDiscountBody">
+        <text>amount - amount * rate</text>
+      </literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <decision id="price" name="Price">
+    <variable id="priceVariable" name="Price" typeRef="number" />
+    <informationRequirement id="priceRequiresAmount">
+      <requiredInput href="#amountInput" />
+    </informationRequirement>
+    <knowledgeRequirement id="priceRequiresDiscount">
+      <requiredKnowledge href="#applyDiscount" />
+    </knowledgeRequirement>
+    <literalExpression id="priceExpression">
+      <text>Apply discount(Amount, 0.1)</text>
+    </literalExpression>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="discountDiagram">
+      <dmndi:DMNShape id="priceShape" dmnElementRef="price">
+        <dc:Bounds height="80" width="180" x="160" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="amountInputShape" dmnElementRef="amountInput">
+        <dc:Bounds height="45" width="125" x="187" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="applyDiscountShape" dmnElementRef="applyDiscount">
+        <dc:Bounds height="46" width="135" x="420" y="97" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="priceRequiresAmountEdge" dmnElementRef="priceRequiresAmount">
+        <di:waypoint x="250" y="260" />
+        <di:waypoint x="250" y="160" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="priceRequiresDiscountEdge" dmnElementRef="priceRequiresDiscount">
+        <di:waypoint x="420" y="120" />
+        <di:waypoint x="340" y="120" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

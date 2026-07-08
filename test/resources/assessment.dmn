@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="assessmentDefinitions" name="Assessment" namespace="https://example.com/dmn/assessment">
+  <inputData id="amountInput" name="Amount">
+    <variable id="amountVariable" name="Amount" typeRef="number" />
+  </inputData>
+  <decision id="assessment" name="Assessment">
+    <variable id="assessmentVariable" name="Assessment" />
+    <informationRequirement id="assessmentRequiresAmount">
+      <requiredInput href="#amountInput" />
+    </informationRequirement>
+    <decisionTable id="assessmentTable" hitPolicy="OUTPUT ORDER">
+      <input id="amountTableInput" label="Amount">
+        <inputExpression id="amountInputExpression" typeRef="number">
+          <text>Amount</text>
+        </inputExpression>
+      </input>
+      <output id="riskOutput" name="risk" typeRef="string">
+        <outputValues id="riskOutputValues">
+          <text>"High","Low"</text>
+        </outputValues>
+      </output>
+      <output id="actionOutput" name="action" typeRef="string">
+        <outputValues id="actionOutputValues">
+          <text>"stop","go"</text>
+        </outputValues>
+      </output>
+      <rule id="lowGoRule">
+        <inputEntry id="lowGoEntry">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="lowGoRisk">
+          <text>"Low"</text>
+        </outputEntry>
+        <outputEntry id="lowGoAction">
+          <text>"go"</text>
+        </outputEntry>
+      </rule>
+      <rule id="highGoRule">
+        <inputEntry id="highGoEntry">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="highGoRisk">
+          <text>"High"</text>
+        </outputEntry>
+        <outputEntry id="highGoAction">
+          <text>"go"</text>
+        </outputEntry>
+      </rule>
+      <rule id="highStopRule">
+        <inputEntry id="highStopEntry">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="highStopRisk">
+          <text>"High"</text>
+        </outputEntry>
+        <outputEntry id="highStopAction">
+          <text>"stop"</text>
+        </outputEntry>
+      </rule>
+      <rule id="lowGoAgainRule">
+        <inputEntry id="lowGoAgainEntry">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="lowGoAgainRisk">
+          <text>"Low"</text>
+        </outputEntry>
+        <outputEntry id="lowGoAgainAction">
+          <text>"go"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="assessmentDiagram">
+      <dmndi:DMNShape id="assessmentShape" dmnElementRef="assessment">
+        <dc:Bounds height="80" width="180" x="160" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="amountInputShape" dmnElementRef="amountInput">
+        <dc:Bounds height="45" width="125" x="187" y="240" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="assessmentRequiresAmountEdge" dmnElementRef="assessmentRequiresAmount">
+        <di:waypoint x="250" y="240" />
+        <di:waypoint x="250" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>
