@@ -4,20 +4,17 @@
   "description": "Executable decision elements based on DMN 1.3",
   "type": "module",
   "private": true,
-  "main": "./dist/index.js",
+  "main": "./src/index.js",
   "module": "./src/index.js",
-  "jsnext:main": "./src/index.js",
   "types": "./types/index.d.ts",
   "exports": {
     ".": {
       "types": "./types/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./src/index.js"
+      "default": "./src/index.js"
     },
     "./errors": {
       "types": "./types/index.d.ts",
-      "require": "./dist/error/Errors.js",
-      "import": "./src/error/Errors.js"
+      "default": "./src/error/Errors.js"
     }
   },
   "sideEffects": false,
@@ -28,15 +25,18 @@
     "lint": "eslint . --cache && prettier . --check --cache && npm run typecheck",
     "pretypecheck": "npm run build:types",
     "typecheck": "tsc --noEmit",
-    "prepack": "npm run dist",
+    "prepack": "npm run build:types",
     "cov:html": "c8 -r html -r text mocha -R @bonniernews/hot-bev -p -t 3000",
     "test:lcov": "c8 -r lcov mocha && npm run lint",
-    "dist": "rollup -c && npm run build:types",
     "build:types": "node scripts/build-types.js"
   },
   "author": {
     "name": "Pål Edman",
     "url": "https://github.com/paed01"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zerodep/dmn-elements.git"
   },
   "license": "MIT",
   "keywords": [
@@ -50,7 +50,6 @@
     "tree-shakeable"
   ],
   "files": [
-    "dist",
     "src",
     "types",
     "*.d.ts"
@@ -60,7 +59,7 @@
       "src/**/*"
     ]
   },
-  "dependencies": {
+  "peerDependencies": {
     "feelin": "^7.0.1"
   },
   "devDependencies": {
@@ -70,7 +69,7 @@
     "@types/debug": "^4.1.13",
     "@types/luxon": "^3.7.2",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.40",
+    "@types/node": "^22.20.1",
     "c8": "^11.0.0",
     "chai": "^6.2.1",
     "chronokinesis": "^8.0.0",
@@ -82,7 +81,6 @@
     "mocha": "^11.0.1",
     "mocha-cakes-2": "^3.3.0",
     "prettier": "^3.2.5",
-    "rollup": "^4.24.0",
     "texample": "^1.0.2"
   }
 }

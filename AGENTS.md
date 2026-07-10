@@ -11,7 +11,7 @@ The isomorphic "DMN XML in, decision result out" engine category is abandonware 
 
 But the layers underneath are alive and maintained by the bpmn-io/nikku (Camunda-adjacent) ecosystem:
 
-- **feelin** 7.x — actively developed FEEL parser/interpreter, tested against the DMN TCK. The only runtime dependency.
+- **feelin** 7.x — actively developed FEEL parser/interpreter, tested against the DMN TCK. The only runtime dependency, declared as a **peerDependency** (author decision 2026-07-10) so the host controls the feelin version and dedupes with its own feelin usage; npm ≥ 7 auto-installs it.
 - **dmn-moddle** 12.x — DMN 1.3 read/write model layer (moddle 8), sibling of bpmn-moddle. Dev dependency; the host parses.
 
 So the only thing worth building — and the only thing this project owns — is the **execution/orchestration layer**: walking the DRG and running decision logic against evaluated FEEL. Parsing (dmn-moddle) and FEEL semantics (feelin) stay upstream. The npm name `dmn-elements` was unclaimed as of 2026-07-08.
@@ -47,9 +47,8 @@ DMN evaluation is a pure function of its inputs: FEEL is side-effect-free, and D
 
 ## Build & tooling decisions
 
-- **rollup, not babel**, builds dist (author preference): `preserveModules: true` so `dist/` mirrors `src/` and subpath exports (`./errors`) resolve; a rollup plugin emits `dist/package.json` with `"type": "commonjs"` (same trick as bpmn-elements' dist).
-- **feelin is ESM-only**, kept external in dist. Consequence: `require('dmn-elements')` needs Node ≥ 20.17 (`require(esm)`); the ESM entry works everywhere. feelin and dmn-moddle themselves declare `node >= 20.12` — that is the real support floor.
-- `dist/` is gitignored and built on prepack; types via **dts-buddy** (`scripts/build-types.js`) into `types/index.d.ts`.
+- **ESM-only, no build step** (author decision 2026-07-10, reversing the earlier CJS dist): feelin 7 is ESM-only, so a CJS dist only worked on Node ≥ 20.19/22.12 (`require(esm)`) anyway — same floor as consuming the ESM source directly via `require(esm)`. The rollup config, `dist/`, and the `require` export conditions were removed; `exports` conditions are `types` + `default` pointing at `src/`. CJS consumers on modern Node can still `require('dmn-elements')` through `require(esm)`.
+- Types via **dts-buddy** (`scripts/build-types.js`) into `types/index.d.ts`, regenerated on prepack.
 - eslint 10 + c8 11 at latest per author request.
 - **Local Node via fnm + .nvmrc** (author instruction): discover and run the project Node with `fnm exec -- <command>` from the project dir — fnm resolves `.nvmrc` (currently 22). The system default node is 18, which trips eslint 10's stylish formatter (`util.styleText`, needs ≥ 20.12) and cannot `require(esm)` — always go through fnm.
 - Style mirrors bpmn-elements: prettier (single quotes, 140 width, es5 commas), semicolons required, `no-console`, mocha + mocha-cakes-2 BDD (`Feature/Scenario/Given/When/Then`), chai `register-expect` (global `expect`), tsconfig with `#types` → `types/interfaces.d.ts`.

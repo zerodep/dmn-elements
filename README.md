@@ -7,7 +7,7 @@ Executable decision elements based on DMN 1.3.
 Walks the decision requirement graph (DRG) and evaluates decisions — decision tables and literal expressions — standing on maintained upstream pieces:
 
 - [dmn-moddle](https://github.com/bpmn-io/dmn-moddle) parses DMN XML (host-side, dev dependency)
-- [feelin](https://github.com/nikku/feelin) evaluates FEEL expressions and unary tests
+- [feelin](https://github.com/nikku/feelin) evaluates FEEL expressions and unary tests (peer dependency)
 
 Sibling of [bpmn-elements](https://github.com/paed01/bpmn-elements), sharing its idiom: isomorphic, tree-shakeable, minimal runtime dependencies.
 
