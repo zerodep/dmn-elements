@@ -18,3 +18,4 @@ export { BusinessKnowledgeModel, BusinessKnowledgeModelBehaviour, KnowledgeSourc
 export { InformationRequirement, KnowledgeRequirement, AuthorityRequirement } from './requirements/index.js';
 export { DmnError, DecisionError } from './error/Errors.js';
 export { coerceTypeRef } from './typeRef.js';
+export { serializeDefinitions } from './serializeDefinitions.js';

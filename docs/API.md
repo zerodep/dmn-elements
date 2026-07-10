@@ -14,6 +14,7 @@ Runnable examples in this document are verified with [texample](https://www.npmj
   - [`types`](#types)
   - [`validateResult`](#validateresult)
   - [`resolveImport`](#resolveimport)
+- [Precompiled definitions](#precompiled-definitions)
 
 <!-- tocstop -->
 
@@ -201,3 +202,38 @@ console.log(await definition.evaluate('fee', { Level: 'platinum' }).catch((err) 
 ```
 
 Only item definitions resolve across imports — DRG elements of imported models (decisions, business knowledge models) cannot be requirement targets yet.
+
+## Precompiled definitions
+
+`serializeDefinitions(definitions)` serializes parsed dmn-moddle definitions to lean JSON — moddle internals never serialize and diagram interchange is stripped. The engine reads only plain data, so the revived JSON evaluates like the source tree. Parse once at build time, ship the JSON, and evaluate without dmn-moddle in the runtime bundle:
+
+```javascript
+import { DmnModdle } from 'dmn-moddle';
+import { Context, Definition, Environment, serializeDefinitions } from 'dmn-elements';
+
+const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="dinnerDefinitions" name="Dinner" namespace="https://example.com/dmn/dinner">
+  <inputData id="seasonInput" name="Season">
+    <variable id="seasonVariable" name="Season" typeRef="string" />
+  </inputData>
+  <decision id="dish" name="Dish">
+    <variable id="dishVariable" name="Dish" typeRef="string" />
+    <informationRequirement id="dishRequiresSeason">
+      <requiredInput href="#seasonInput" />
+    </informationRequirement>
+    <literalExpression id="dishExpression"><text>if Season = "Winter" then "Roast beef" else "Light salad"</text></literalExpression>
+  </decision>
+</definitions>`;
+
+// build time: parse and serialize, e.g. to a file next to the bundle
+const { rootElement } = await new DmnModdle().fromXML(source);
+const precompiled = serializeDefinitions(rootElement);
+
+// runtime: revive — no dmn-moddle needed from here on
+const definition = new Definition(new Context(JSON.parse(precompiled), new Environment()));
+
+console.log(await definition.evaluate('dish', { Season: 'Winter' }));
+// Roast beef
+```
+
+The serialization is one-way: a revived tree evaluates, but cannot be written back to DMN XML — that needs the moddle instances.
