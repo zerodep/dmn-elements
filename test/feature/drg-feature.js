@@ -81,27 +81,27 @@ Feature('decision requirement graph', () => {
 
   Scenario('a decision with unsupported decision logic', () => {
     const source = `<?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="contextDefinitions" name="Relation logic" namespace="https://example.com/dmn/relation">
-  <decision id="relational" name="Relational">
-    <relation id="relationLogic" />
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="contextDefinitions" name="Tests logic" namespace="https://example.com/dmn/tests">
+  <decision id="testual" name="Testual">
+    <unaryTests id="testsLogic" />
   </decision>
 </definitions>`;
 
     /** @type {Definition} */
     let definition;
-    Given('a definition from an inline source where the decision logic is a relation', async () => {
+    Given('a definition from an inline source where the decision logic is a unary tests expression', async () => {
       definition = new Definition(await testHelpers.context(source));
     });
 
     /** @type {any} */
     let error;
     When('the decision is evaluated', async () => {
-      error = await definition.evaluate('relational', {}).catch((/** @type {Error} */ err) => err);
+      error = await definition.evaluate('testual', {}).catch((/** @type {Error} */ err) => err);
     });
 
     Then('a decision error points out the unsupported logic', () => {
       expect(error).to.be.instanceof(DecisionError);
-      expect(error.message).to.match(/unsupported decision logic dmn:Relation/);
+      expect(error.message).to.match(/unsupported decision logic dmn:UnaryTests/);
     });
   });
 

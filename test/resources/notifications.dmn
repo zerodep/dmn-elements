@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="notificationsDefinitions" name="Notifications" namespace="https://example.com/dmn/notifications">
+  <inputData id="managerInput" name="Manager">
+    <variable id="managerVariable" name="Manager" typeRef="string" />
+  </inputData>
+  <decision id="recipients" name="Recipients">
+    <variable id="recipientsVariable" name="Recipients" />
+    <informationRequirement id="recipientsRequiresManager">
+      <requiredInput href="#managerInput" />
+    </informationRequirement>
+    <list id="recipientList">
+      <literalExpression id="supportRecipient">
+        <text>"support@example.com"</text>
+      </literalExpression>
+      <literalExpression id="managerRecipient">
+        <text>Manager</text>
+      </literalExpression>
+      <literalExpression id="auditRecipient">
+        <text>"audit@example.com"</text>
+      </literalExpression>
+    </list>
+  </decision>
+  <decision id="escalation" name="Escalation">
+    <variable id="escalationVariable" name="Escalation" typeRef="string" />
+    <informationRequirement id="escalationRequiresRecipients">
+      <requiredDecision href="#recipients" />
+    </informationRequirement>
+    <literalExpression id="escalationExpression">
+      <text>Recipients[2]</text>
+    </literalExpression>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="notificationsDiagram">
+      <dmndi:DMNShape id="escalationShape" dmnElementRef="escalation">
+        <dc:Bounds height="80" width="180" x="200" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="recipientsShape" dmnElementRef="recipients">
+        <dc:Bounds height="80" width="180" x="440" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="managerInputShape" dmnElementRef="managerInput">
+        <dc:Bounds height="45" width="125" x="467" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="escalationRequiresRecipientsEdge" dmnElementRef="escalationRequiresRecipients">
+        <di:waypoint x="440" y="120" />
+        <di:waypoint x="380" y="120" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="recipientsRequiresManagerEdge" dmnElementRef="recipientsRequiresManager">
+        <di:waypoint x="529" y="260" />
+        <di:waypoint x="530" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

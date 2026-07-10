@@ -25,18 +25,41 @@ const typeAliases = {
  *
  * Handles FEEL type names and Camunda Modeler's Java-ish aliases (integer, long,
  * double). Temporal strings are converted through the environment's expression
- * engine (date, time, date and time, duration). Unknown typeRefs, e.g. item
- * definition references, pass the value through untouched, as do null and undefined.
+ * engine (date, time, date and time, duration).
+ *
+ * Other typeRefs resolve against the definitions' item definitions when the
+ * element carries a context: a typeRef alias follows the chain, allowed values
+ * are validated as FEEL unary tests, item components coerce the matching
+ * properties of a structure, and a collection coerces each element. Unknown
+ * typeRefs pass the value through untouched, as do null and undefined.
+ *
+ * A host can override or extend coercion per typeRef through the environment
+ * setting `types` — a map of typeRef (exact match) to coercion function
+ * `(value, typeRef, element) => coerced`. Overrides take precedence over the
+ * builtin types and item definitions, and own their validation — throw a
+ * DecisionError to fail loudly.
  * @param {any} value
  * @param {string | undefined} typeRef declared type, e.g. on a variable, input expression, output, or formal parameter
- * @param {{ id?: string, type?: string, environment: import('./Environment.js').Environment }} element owning element, for FEEL access and error source
+ * @param {{ id?: string, type?: string, environment: import('./Environment.js').Environment, context?: import('./Context.js').Context }} element owning element, for FEEL access, item definition lookup, and error source
  * @returns {any} the coerced value
  * @throws {DecisionError} when the value cannot be coerced
  */
 export function coerceTypeRef(value, typeRef, element) {
+  return coerce(value, typeRef, element, new Set());
+}
+
+/**
+ * @internal
+ * @param {Set<string>} chain item definition names followed by typeRef aliasing, for cycle detection
+ */
+function coerce(value, typeRef, element, chain) {
   if (value === null || value === undefined || !typeRef) return value;
+
+  const override = element.environment.settings.types?.[typeRef];
+  if (override) return override(value, typeRef, element);
+
   const type = typeAliases[typeRef.replace(/\s/g, '').toLowerCase()];
-  if (!type) return value;
+  if (!type) return coerceItemDefinition(value, typeRef, element, chain);
 
   switch (type) {
     case 'string':
@@ -64,4 +87,57 @@ export function coerceTypeRef(value, typeRef, element) {
   }
 
   throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to ${typeRef}`, element);
+}
+
+/** @internal look the typeRef up among the definitions' item definitions, guarding alias cycles */
+function coerceItemDefinition(value, typeRef, element, chain) {
+  const itemDefinition = element.context?.getItemDefinitionByName(typeRef);
+  if (!itemDefinition) return value;
+
+  if (chain.has(typeRef)) throw new DecisionError(`<${element.id}> circular item definition <${typeRef}>`, element);
+  chain.add(typeRef);
+  return coerceItem(value, itemDefinition, element, chain);
+}
+
+/** @internal an item definition or item component — a collection coerces each element */
+function coerceItem(value, itemDef, element, chain) {
+  if (value === null || value === undefined) return value;
+
+  if (itemDef.isCollection) {
+    if (!Array.isArray(value)) {
+      throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to collection ${itemName(itemDef)}`, element);
+    }
+    return value.map((item) => (item === null || item === undefined ? item : coerceItemValue(item, itemDef, element, chain)));
+  }
+
+  return coerceItemValue(value, itemDef, element, chain);
+}
+
+/** @internal */
+function coerceItemValue(value, itemDef, element, chain) {
+  let coerced = value;
+  if (itemDef.typeRef) {
+    coerced = coerce(value, itemDef.typeRef, element, chain);
+  } else if (itemDef.itemComponent?.length) {
+    if (typeof value !== 'object' || Array.isArray(value)) {
+      throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to ${itemName(itemDef)}`, element);
+    }
+    coerced = { ...value };
+    for (const component of itemDef.itemComponent) {
+      if (!(component.name in coerced)) continue;
+      // a fresh chain per component — descending into the value makes recursive types finite
+      coerced[component.name] = coerceItem(coerced[component.name], component, element, new Set());
+    }
+  }
+
+  const allowed = itemDef.allowedValues?.text;
+  if (allowed && !element.environment.unaryTest(allowed, { '?': coerced })) {
+    throw new DecisionError(`<${element.id}> value ${JSON.stringify(coerced)} violates allowed values of ${itemName(itemDef)}`, element);
+  }
+  return coerced;
+}
+
+/** @internal */
+function itemName(itemDef) {
+  return itemDef.name || itemDef.id;
 }

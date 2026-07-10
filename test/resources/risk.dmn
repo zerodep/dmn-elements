@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="riskDefinitions" name="Risk" namespace="https://example.com/dmn/risk">
+  <itemDefinition id="tRiskClass" name="tRiskClass">
+    <typeRef>string</typeRef>
+    <allowedValues id="riskClassValues">
+      <text>"low", "medium", "high"</text>
+    </allowedValues>
+  </itemDefinition>
+  <inputData id="scoreInput" name="Score">
+    <variable id="scoreVariable" name="Score" typeRef="number" />
+  </inputData>
+  <decision id="riskClass" name="Risk class">
+    <variable id="riskClassVariable" name="Risk class" typeRef="tRiskClass" />
+    <informationRequirement id="riskClassRequiresScore">
+      <requiredInput href="#scoreInput" />
+    </informationRequirement>
+    <decisionTable id="riskClassTable" hitPolicy="FIRST">
+      <input id="riskScoreInput">
+        <inputExpression id="riskScoreInputExpression" typeRef="number">
+          <text>Score</text>
+        </inputExpression>
+      </input>
+      <output id="riskClassOutput" name="class" typeRef="string" />
+      <rule id="lowRule">
+        <inputEntry id="lowEntry">
+          <text>&lt; 40</text>
+        </inputEntry>
+        <outputEntry id="lowClass">
+          <text>"low"</text>
+        </outputEntry>
+      </rule>
+      <rule id="mediumRule">
+        <inputEntry id="mediumEntry">
+          <text>&lt; 70</text>
+        </inputEntry>
+        <outputEntry id="mediumClass">
+          <text>"medium"</text>
+        </outputEntry>
+      </rule>
+      <rule id="highRule">
+        <inputEntry id="highEntry">
+          <text>&lt; 90</text>
+        </inputEntry>
+        <outputEntry id="highClass">
+          <text>"high"</text>
+        </outputEntry>
+      </rule>
+      <rule id="unmappedRule">
+        <inputEntry id="unmappedEntry">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="unmappedClass">
+          <text>"unmapped"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="riskDiagram">
+      <dmndi:DMNShape id="riskClassShape" dmnElementRef="riskClass">
+        <dc:Bounds height="80" width="180" x="200" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="scoreInputShape" dmnElementRef="scoreInput">
+        <dc:Bounds height="45" width="125" x="227" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="riskClassRequiresScoreEdge" dmnElementRef="riskClassRequiresScore">
+        <di:waypoint x="289" y="260" />
+        <di:waypoint x="290" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

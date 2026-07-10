@@ -185,6 +185,41 @@ Feature('typeRef coercion', () => {
     });
   });
 
+  Scenario('a type override via settings coerces an item definition type', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('an inline source with a custom typed input expression and a type override in environment settings', async () => {
+      definition = await getDefinition(
+        factory.decisionTableSource({
+          id: 'grade',
+          inputs: [{ text: 'Score', typeRef: 'tScore' }],
+          outputs: [{ name: 'grade' }],
+          rules: [
+            { input: ['> 80'], output: ['"gold"'] },
+            { input: ['<= 80'], output: ['"silver"'] },
+          ],
+        }),
+        {
+          settings: {
+            types: {
+              tScore: (/** @type {any} */ value) => Number(String(value).replace(' pts', '')),
+            },
+          },
+        }
+      );
+    });
+
+    /** @type {any} */
+    let result;
+    When('evaluated with a value only the override understands', async () => {
+      result = await definition.evaluate('grade', { Score: '85 pts' });
+    });
+
+    Then('the override coerced the value before the unary tests', () => {
+      expect(result).to.equal('gold');
+    });
+  });
+
   Scenario('a value that cannot be coerced', () => {
     /** @type {Definition} */
     let definition;

@@ -99,4 +99,60 @@ describe('coerceTypeRef(value, typeRef, element)', () => {
       expect(coerceTypeRef(order, 'tOrder', element)).to.equal(order);
     });
   });
+
+  describe('type overrides via settings', () => {
+    /** @param {Record<string, (value: any, typeRef: string, element: any) => any>} types */
+    function overriddenElement(types) {
+      return { id: 'overridden', type: 'dmn:InputData', environment: new Environment({ settings: { types } }) };
+    }
+
+    it('an override coerces an unknown typeRef, e.g. an item definition', () => {
+      const el = overriddenElement({ tScore: (value) => Number(String(value).replace(' pts', '')) });
+      expect(coerceTypeRef('85 pts', 'tScore', el)).to.equal(85);
+    });
+
+    it('an override takes precedence over a builtin type', () => {
+      const el = overriddenElement({ double: (value) => Math.round(Number(value)) });
+      expect(coerceTypeRef('12.4', 'double', el)).to.equal(12);
+    });
+
+    it('the override is called with value, typeRef, and the owning element', () => {
+      /** @type {any[]} */
+      let args = [];
+      const el = overriddenElement({
+        tOrder(...overrideArgs) {
+          args = overrideArgs;
+          return 'handled';
+        },
+      });
+      expect(coerceTypeRef('rush', 'tOrder', el)).to.equal('handled');
+      expect(args).to.deep.equal(['rush', 'tOrder', el]);
+    });
+
+    it('typeRef match is exact — no alias normalization', () => {
+      const el = overriddenElement({ tOrder: () => 'handled' });
+      expect(coerceTypeRef('rush', 'TORDER', el)).to.equal('rush');
+    });
+
+    it('null and undefined pass through without consulting the override', () => {
+      let called = false;
+      const el = overriddenElement({
+        tOrder() {
+          called = true;
+        },
+      });
+      expect(coerceTypeRef(null, 'tOrder', el)).to.be.null;
+      expect(coerceTypeRef(undefined, 'tOrder', el)).to.be.undefined;
+      expect(called).to.be.false;
+    });
+
+    it('an error thrown by the override propagates', () => {
+      const el = overriddenElement({
+        tOrder() {
+          throw new DecisionError('no such order type', el);
+        },
+      });
+      expect(() => coerceTypeRef('rush', 'tOrder', el)).to.throw(DecisionError, /no such order type/);
+    });
+  });
 });

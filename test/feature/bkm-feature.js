@@ -196,7 +196,7 @@ Feature('business knowledge model', () => {
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="bodyDefinitions" name="Body" namespace="https://example.com/dmn/body">
   <businessKnowledgeModel id="contextRules" name="Context rules">
     <encapsulatedLogic id="contextLogic">
-      <relation id="relationBody" />
+      <unaryTests id="testsBody" />
     </encapsulatedLogic>
   </businessKnowledgeModel>
   <decision id="contextDecision" name="Context decision">
@@ -209,7 +209,7 @@ Feature('business knowledge model', () => {
 
     /** @type {Definition} */
     let definition;
-    Given('a definition from an inline source where the encapsulated logic body is a relation', async () => {
+    Given('a definition from an inline source where the encapsulated logic body is a unary tests expression', async () => {
       definition = new Definition(await testHelpers.context(source));
     });
 
@@ -221,7 +221,7 @@ Feature('business knowledge model', () => {
 
     Then('a decision error points out the unsupported body', () => {
       expect(error).to.be.instanceof(DecisionError);
-      expect(error.message).to.match(/unsupported encapsulated logic body dmn:Relation/);
+      expect(error.message).to.match(/unsupported encapsulated logic body dmn:UnaryTests/);
     });
   });
 

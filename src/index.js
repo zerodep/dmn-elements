@@ -4,7 +4,15 @@ export { Expressions } from './Expressions.js';
 export { Definition } from './definition/Definition.js';
 export { DrgElement } from './drgElement/DrgElement.js';
 export { Decision, DecisionBehaviour } from './decisions/index.js';
-export { BoxedContext, DecisionTable, LiteralExpression } from './decisionLogic/index.js';
+export {
+  BoxedContext,
+  BoxedList,
+  DecisionTable,
+  FunctionDefinition,
+  Invocation,
+  LiteralExpression,
+  Relation,
+} from './decisionLogic/index.js';
 export { InputData, InputDataBehaviour } from './io/index.js';
 export { BusinessKnowledgeModel, BusinessKnowledgeModelBehaviour, KnowledgeSource, KnowledgeSourceBehaviour } from './knowledge/index.js';
 export { InformationRequirement, KnowledgeRequirement, AuthorityRequirement } from './requirements/index.js';

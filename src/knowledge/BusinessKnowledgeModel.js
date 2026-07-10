@@ -1,7 +1,11 @@
 import { DrgElement } from '../drgElement/DrgElement.js';
 import { BoxedContext } from '../decisionLogic/BoxedContext.js';
+import { BoxedList } from '../decisionLogic/BoxedList.js';
 import { DecisionTable } from '../decisionLogic/DecisionTable.js';
+import { FunctionDefinition } from '../decisionLogic/FunctionDefinition.js';
+import { Invocation } from '../decisionLogic/Invocation.js';
 import { LiteralExpression } from '../decisionLogic/LiteralExpression.js';
+import { Relation } from '../decisionLogic/Relation.js';
 import { DecisionError } from '../error/Errors.js';
 import { coerceTypeRef } from '../typeRef.js';
 
@@ -52,6 +56,18 @@ BusinessKnowledgeModelBehaviour.prototype.execute = function execute(executeMess
     case 'dmn:Context':
       bodyLogic = new BoxedContext(logic.body, this.element.context);
       break;
+    case 'dmn:Invocation':
+      bodyLogic = new Invocation(logic.body, this.element.context);
+      break;
+    case 'dmn:Relation':
+      bodyLogic = new Relation(logic.body, this.element.context);
+      break;
+    case 'dmn:List':
+      bodyLogic = new BoxedList(logic.body, this.element.context);
+      break;
+    case 'dmn:FunctionDefinition':
+      bodyLogic = new FunctionDefinition(logic.body, this.element.context);
+      break;
     default:
       return callback(new DecisionError(`<${this.id}> unsupported encapsulated logic body ${logic.body?.$type}`, this));
   }
@@ -60,7 +76,7 @@ BusinessKnowledgeModelBehaviour.prototype.execute = function execute(executeMess
   const knowledge = executeMessage?.input || {};
   const element = this.element;
 
-  return callback(null, function invokeBkm(...args) {
+  const invokeBkm = function invokeBkm(...args) {
     element.logger.debug(`<${element.id}> invoked with ${args.length} argument${args.length === 1 ? '' : 's'}`);
     const scope = { ...knowledge };
     for (let idx = 0; idx < parameters.length; idx++) {
@@ -68,5 +84,9 @@ BusinessKnowledgeModelBehaviour.prototype.execute = function execute(executeMess
       scope[parameter.name] = coerceTypeRef(args[idx], parameter.typeRef, element);
     }
     return bodyLogic.evaluate(scope);
-  });
+  };
+  // formal parameter names, so a boxed invocation can map named bindings to positions
+  invokeBkm.parameters = parameters.map((parameter) => parameter.name);
+
+  return callback(null, invokeBkm);
 };

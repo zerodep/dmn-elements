@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="applicantDefinitions" name="Applicant" namespace="https://example.com/dmn/applicant">
+  <itemDefinition id="tEmployment" name="tEmployment">
+    <typeRef>string</typeRef>
+    <allowedValues id="employmentValues">
+      <text>"employed", "self-employed", "unemployed"</text>
+    </allowedValues>
+  </itemDefinition>
+  <itemDefinition id="tApplicant" name="tApplicant">
+    <itemComponent id="ageComponent" name="age">
+      <typeRef>number</typeRef>
+    </itemComponent>
+    <itemComponent id="employmentComponent" name="employment">
+      <typeRef>tEmployment</typeRef>
+    </itemComponent>
+  </itemDefinition>
+  <inputData id="applicantInput" name="Applicant">
+    <variable id="applicantVariable" name="Applicant" typeRef="tApplicant" />
+  </inputData>
+  <decision id="eligibility" name="Eligibility">
+    <variable id="eligibilityVariable" name="Eligibility" typeRef="boolean" />
+    <informationRequirement id="eligibilityRequiresApplicant">
+      <requiredInput href="#applicantInput" />
+    </informationRequirement>
+    <decisionTable id="eligibilityTable" hitPolicy="FIRST">
+      <input id="ageInput">
+        <inputExpression id="ageInputExpression" typeRef="number">
+          <text>Applicant.age</text>
+        </inputExpression>
+      </input>
+      <input id="employmentInput">
+        <inputExpression id="employmentInputExpression" typeRef="string">
+          <text>Applicant.employment</text>
+        </inputExpression>
+      </input>
+      <output id="eligibleOutput" name="eligible" typeRef="boolean" />
+      <rule id="eligibleRule">
+        <inputEntry id="eligibleAge">
+          <text>&gt;= 18</text>
+        </inputEntry>
+        <inputEntry id="eligibleEmployment">
+          <text>"employed", "self-employed"</text>
+        </inputEntry>
+        <outputEntry id="eligibleEntry">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="ineligibleRule">
+        <inputEntry id="ineligibleAge">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="ineligibleEmployment">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="ineligibleEntry">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="applicantDiagram">
+      <dmndi:DMNShape id="eligibilityShape" dmnElementRef="eligibility">
+        <dc:Bounds height="80" width="180" x="200" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="applicantInputShape" dmnElementRef="applicantInput">
+        <dc:Bounds height="45" width="125" x="227" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="eligibilityRequiresApplicantEdge" dmnElementRef="eligibilityRequiresApplicant">
+        <di:waypoint x="289" y="260" />
+        <di:waypoint x="290" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

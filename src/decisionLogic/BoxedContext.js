@@ -1,7 +1,6 @@
 import { DmnError, DecisionError } from '../error/Errors.js';
 import { coerceTypeRef } from '../typeRef.js';
-import { DecisionTable } from './DecisionTable.js';
-import { LiteralExpression } from './LiteralExpression.js';
+import { expressionValue } from './expressionValue.js';
 
 /**
  * Boxed context evaluation — dmn:Context as decision logic.
@@ -65,15 +64,5 @@ BoxedContext.prototype.evaluate = function evaluateContext(input = {}) {
 BoxedContext.prototype._entryValue = function entryValue(entry, scope) {
   const expression = entry.value;
   if (!expression) return null;
-
-  switch (expression.$type) {
-    case 'dmn:LiteralExpression':
-      return new LiteralExpression(expression, this.context).evaluate(scope);
-    case 'dmn:DecisionTable':
-      return new DecisionTable(expression, this.context).evaluate(scope);
-    case 'dmn:Context':
-      return new BoxedContext(expression, this.context).evaluate(scope);
-    default:
-      throw new DecisionError(`<${this.id}> unsupported context entry expression ${expression.$type}`, this);
-  }
+  return expressionValue(expression, this.context, scope, this, 'context entry');
 };

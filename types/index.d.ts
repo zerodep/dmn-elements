@@ -37,6 +37,11 @@ declare module 'dmn-elements' {
 		
 		getDrgElementById(id: string): any;
 		/**
+		 * Item definition by type name, as referenced by a typeRef
+		 * @returns dmn-moddle item definition
+		 */
+		getItemDefinitionByName(name: string): any | undefined;
+		/**
 		 * DRG elements the passed element requires, resolved from information- and knowledge requirements
 		 * @param drgElementDef dmn-moddle DRG element definition
 		 * @returns required dmn-moddle DRG element definitions
@@ -266,10 +271,21 @@ declare module 'dmn-elements' {
 	 *
 	 * Handles FEEL type names and Camunda Modeler's Java-ish aliases (integer, long,
 	 * double). Temporal strings are converted through the environment's expression
-	 * engine (date, time, date and time, duration). Unknown typeRefs, e.g. item
-	 * definition references, pass the value through untouched, as do null and undefined.
+	 * engine (date, time, date and time, duration).
+	 *
+	 * Other typeRefs resolve against the definitions' item definitions when the
+	 * element carries a context: a typeRef alias follows the chain, allowed values
+	 * are validated as FEEL unary tests, item components coerce the matching
+	 * properties of a structure, and a collection coerces each element. Unknown
+	 * typeRefs pass the value through untouched, as do null and undefined.
+	 *
+	 * A host can override or extend coercion per typeRef through the environment
+	 * setting `types` — a map of typeRef (exact match) to coercion function
+	 * `(value, typeRef, element) => coerced`. Overrides take precedence over the
+	 * builtin types and item definitions, and own their validation — throw a
+	 * DecisionError to fail loudly.
 	 * @param typeRef declared type, e.g. on a variable, input expression, output, or formal parameter
-	 * @param element owning element, for FEEL access and error source
+	 * @param element owning element, for FEEL access, item definition lookup, and error source
 	 * @returns the coerced value
 	 * @throws {DecisionError} when the value cannot be coerced
 	 */
@@ -277,6 +293,7 @@ declare module 'dmn-elements' {
 		id?: string;
 		type?: string;
 		environment: Environment;
+		context?: Context;
 	}): any;
 	/**
 	 * Base error for dmn-elements
@@ -410,6 +427,8 @@ declare module 'dmn-elements' {
 		element: DrgElement;
 		decisionLogic: any;
 		execute(executeMessage: any, callback: any): any;
+		
+		_validatedCallback(callback: any): (err: any, result: any) => any;
 	}
 	/**
 	 * Boxed context evaluation — dmn:Context as decision logic.
@@ -450,6 +469,42 @@ declare module 'dmn-elements' {
 		evaluate(input?: Record<string, any>): any;
 		
 		_entryValue(entry: any, scope: any): any;
+	}
+	/**
+	 * Boxed list evaluation — dmn:List as decision logic.
+	 *
+	 * Elements evaluate independently in the evaluation input scope, in declaration
+	 * order; the list evaluates to the list of element values.
+	 * @param listDef dmn-moddle list definition
+	 * */
+	export function BoxedList(listDef: any, context: Context): void;
+	export class BoxedList {
+		/**
+		 * Boxed list evaluation — dmn:List as decision logic.
+		 *
+		 * Elements evaluate independently in the evaluation input scope, in declaration
+		 * order; the list evaluates to the list of element values.
+		 * @param listDef dmn-moddle list definition
+		 * */
+		constructor(listDef: any, context: Context);
+		id: any;
+		type: any;
+		behaviour: any;
+		context: Context;
+		environment: Environment | undefined;
+		logger: ILogger;
+		/**
+		 * @param executeMessage evaluation input context
+		 * */
+		execute(executeMessage: {
+			input?: Record<string, any>;
+		}, callback: (err: Error | null, result?: any) => void): void;
+		/**
+		 * Evaluate synchronously, e.g. as encapsulated logic invoked from FEEL
+		 * @param input evaluation input context
+		 * @returns one value per element
+		 */
+		evaluate(input?: Record<string, any>): any[];
 	}
 	/**
 	 * Decision table evaluation — inputs, outputs, rules, and hit policy resolution.
@@ -514,6 +569,88 @@ declare module 'dmn-elements' {
 		_hitPolicyError(hitPolicy: any, matched: any): DecisionError;
 	}
 	/**
+	 * Boxed function definition evaluation — dmn:FunctionDefinition as decision logic.
+	 *
+	 * Evaluates to a FEEL-invocable function. Unlike a business knowledge model,
+	 * whose scope is closed to formal parameters and required knowledge, an inline
+	 * function definition is a closure over its definition scope, per FEEL function
+	 * semantics — e.g. earlier entries of the boxed context defining it.
+	 * @param functionDef dmn-moddle function definition
+	 * */
+	export function FunctionDefinition(functionDef: any, context: Context): void;
+	export class FunctionDefinition {
+		/**
+		 * Boxed function definition evaluation — dmn:FunctionDefinition as decision logic.
+		 *
+		 * Evaluates to a FEEL-invocable function. Unlike a business knowledge model,
+		 * whose scope is closed to formal parameters and required knowledge, an inline
+		 * function definition is a closure over its definition scope, per FEEL function
+		 * semantics — e.g. earlier entries of the boxed context defining it.
+		 * @param functionDef dmn-moddle function definition
+		 * */
+		constructor(functionDef: any, context: Context);
+		id: any;
+		type: any;
+		behaviour: any;
+		context: Context;
+		environment: Environment | undefined;
+		logger: ILogger;
+		/**
+		 * @param executeMessage evaluation input context
+		 * */
+		execute(executeMessage: {
+			input?: Record<string, any>;
+		}, callback: (err: Error | null, result?: any) => void): void;
+		/**
+		 * Evaluate synchronously to the FEEL-invocable function
+		 * @param input definition scope the function closes over
+		 * @returns the function
+		 */
+		evaluate(input?: Record<string, any>): (...args: any[]) => any;
+	}
+	/**
+	 * Boxed invocation evaluation — dmn:Invocation as decision logic.
+	 *
+	 * The called function expression resolves to a FEEL-invocable function, e.g. a
+	 * business knowledge model or decision service bound by a knowledge requirement.
+	 * Bindings map to the function's formal parameters by name; a function without
+	 * parameter metadata is applied with the binding values in declaration order.
+	 * @param invocationDef dmn-moddle invocation definition
+	 * */
+	export function Invocation(invocationDef: any, context: Context): void;
+	export class Invocation {
+		/**
+		 * Boxed invocation evaluation — dmn:Invocation as decision logic.
+		 *
+		 * The called function expression resolves to a FEEL-invocable function, e.g. a
+		 * business knowledge model or decision service bound by a knowledge requirement.
+		 * Bindings map to the function's formal parameters by name; a function without
+		 * parameter metadata is applied with the binding values in declaration order.
+		 * @param invocationDef dmn-moddle invocation definition
+		 * */
+		constructor(invocationDef: any, context: Context);
+		id: any;
+		type: any;
+		behaviour: any;
+		context: Context;
+		environment: Environment | undefined;
+		logger: ILogger;
+		/**
+		 * @param executeMessage evaluation input context
+		 * */
+		execute(executeMessage: {
+			input?: Record<string, any>;
+		}, callback: (err: Error | null, result?: any) => void): void;
+		/**
+		 * Evaluate synchronously, e.g. as encapsulated logic invoked from FEEL
+		 * @param input evaluation input context
+		 * @returns the called function result
+		 */
+		evaluate(input?: Record<string, any>): any;
+		
+		_expressionValue(expression: any, scope: any, role: any): any;
+	}
+	/**
 	 * Literal expression evaluation — a single FEEL expression as decision logic
 	 * @param literalExpressionDef dmn-moddle literal expression definition
 	 * */
@@ -542,6 +679,46 @@ declare module 'dmn-elements' {
 		 * @returns expression result, null when the expression is empty
 		 */
 		evaluate(input?: Record<string, any>): any;
+	}
+	/**
+	 * Boxed relation evaluation — dmn:Relation as decision logic.
+	 *
+	 * A vertical table of expressions: each row evaluates to a context keyed by
+	 * column name, the relation to the list of rows. Cells evaluate independently
+	 * in the evaluation input scope; a row shorter than the columns binds null for
+	 * the missing cells; cell values are coerced to the column typeRef.
+	 * @param relationDef dmn-moddle relation definition
+	 * */
+	export function Relation(relationDef: any, context: Context): void;
+	export class Relation {
+		/**
+		 * Boxed relation evaluation — dmn:Relation as decision logic.
+		 *
+		 * A vertical table of expressions: each row evaluates to a context keyed by
+		 * column name, the relation to the list of rows. Cells evaluate independently
+		 * in the evaluation input scope; a row shorter than the columns binds null for
+		 * the missing cells; cell values are coerced to the column typeRef.
+		 * @param relationDef dmn-moddle relation definition
+		 * */
+		constructor(relationDef: any, context: Context);
+		id: any;
+		type: any;
+		behaviour: any;
+		context: Context;
+		environment: Environment | undefined;
+		logger: ILogger;
+		/**
+		 * @param executeMessage evaluation input context
+		 * */
+		execute(executeMessage: {
+			input?: Record<string, any>;
+		}, callback: (err: Error | null, result?: any) => void): void;
+		/**
+		 * Evaluate synchronously, e.g. as encapsulated logic invoked from FEEL
+		 * @param input evaluation input context
+		 * @returns one context per row, keyed by column name
+		 */
+		evaluate(input?: Record<string, any>): Record<string, any>[];
 	}
 	/**
 	 * DMN input data element — supplies a named input value from the evaluation input

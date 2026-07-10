@@ -201,7 +201,7 @@ Feature('context decision logic', () => {
     <context id="oddContext">
       <contextEntry id="oddEntry">
         <variable id="oddEntryVariable" name="Entry" />
-        <relation id="oddRelation" />
+        <unaryTests id="oddTests" />
       </contextEntry>
     </context>
   </decision>
@@ -209,7 +209,7 @@ Feature('context decision logic', () => {
 
     /** @type {Definition} */
     let definition;
-    Given('a definition from an inline source where a context entry is a relation', async () => {
+    Given('a definition from an inline source where a context entry is a unary tests expression', async () => {
       definition = new Definition(await testHelpers.context(source));
     });
 
@@ -221,7 +221,7 @@ Feature('context decision logic', () => {
 
     Then('a decision error points out the unsupported entry expression', () => {
       expect(error).to.be.instanceof(DecisionError);
-      expect(error.message).to.match(/unsupported context entry expression dmn:Relation/);
+      expect(error.message).to.match(/unsupported context entry expression dmn:UnaryTests/);
     });
   });
 });

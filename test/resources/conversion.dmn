@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="conversionDefinitions" name="Conversion" namespace="https://example.com/dmn/conversion">
+  <inputData id="priceInput" name="Price">
+    <variable id="priceVariable" name="Price" typeRef="number" />
+  </inputData>
+  <inputData id="rateInput" name="Rate">
+    <variable id="rateVariable" name="Rate" typeRef="number" />
+  </inputData>
+  <decision id="converted" name="Converted">
+    <variable id="convertedVariable" name="Converted" typeRef="number" />
+    <informationRequirement id="convertedRequiresPrice">
+      <requiredInput href="#priceInput" />
+    </informationRequirement>
+    <informationRequirement id="convertedRequiresRate">
+      <requiredInput href="#rateInput" />
+    </informationRequirement>
+    <context id="convertedContext">
+      <contextEntry id="toEurEntry">
+        <variable id="toEurVariable" name="to eur" />
+        <functionDefinition id="toEurFunction" kind="FEEL">
+          <formalParameter id="amountParameter" name="amount" typeRef="number" />
+          <formalParameter id="conversionRateParameter" name="rate" typeRef="number" />
+          <literalExpression id="toEurBody">
+            <text>amount / rate</text>
+          </literalExpression>
+        </functionDefinition>
+      </contextEntry>
+      <contextEntry id="convertedResultEntry">
+        <literalExpression id="convertedResultExpression">
+          <text>to eur(Price, Rate)</text>
+        </literalExpression>
+      </contextEntry>
+    </context>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="conversionDiagram">
+      <dmndi:DMNShape id="convertedShape" dmnElementRef="converted">
+        <dc:Bounds height="80" width="180" x="200" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="priceInputShape" dmnElementRef="priceInput">
+        <dc:Bounds height="45" width="125" x="147" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="rateInputShape" dmnElementRef="rateInput">
+        <dc:Bounds height="45" width="125" x="317" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="convertedRequiresPriceEdge" dmnElementRef="convertedRequiresPrice">
+        <di:waypoint x="209" y="260" />
+        <di:waypoint x="250" y="160" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="convertedRequiresRateEdge" dmnElementRef="convertedRequiresRate">
+        <di:waypoint x="379" y="260" />
+        <di:waypoint x="330" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

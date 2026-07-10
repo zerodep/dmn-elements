@@ -327,6 +327,8 @@ DefinitionExecution.prototype._bindService = function bindService(serviceDef, ca
     if (failure) throw failure;
     return outcome;
   };
+  // parameter names, so a boxed invocation can map named bindings to positions
+  invocable.parameters = parameters.map((parameter) => parameter.name);
 
   /** @type {TraceEntry} */
   const entry = { id, type: serviceDef.$type, name: serviceDef.name, requirements: [] };

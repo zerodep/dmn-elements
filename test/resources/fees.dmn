@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="feesDefinitions" name="Fees" namespace="https://example.com/dmn/fees">
+  <inputData id="levelInput" name="Level">
+    <variable id="levelVariable" name="Level" typeRef="string" />
+  </inputData>
+  <decision id="feeSchedule" name="Fee schedule">
+    <variable id="feeScheduleVariable" name="Fee schedule" />
+    <relation id="feeScheduleRelation">
+      <column id="levelColumn" name="level" typeRef="string" />
+      <column id="feeColumn" name="fee" typeRef="number" />
+      <row id="goldRow">
+        <literalExpression id="goldLevel">
+          <text>"gold"</text>
+        </literalExpression>
+        <literalExpression id="goldFee">
+          <text>0</text>
+        </literalExpression>
+      </row>
+      <row id="silverRow">
+        <literalExpression id="silverLevel">
+          <text>"silver"</text>
+        </literalExpression>
+        <literalExpression id="silverFee">
+          <text>5</text>
+        </literalExpression>
+      </row>
+      <row id="bronzeRow">
+        <literalExpression id="bronzeLevel">
+          <text>"bronze"</text>
+        </literalExpression>
+        <literalExpression id="bronzeFee">
+          <text>10</text>
+        </literalExpression>
+      </row>
+    </relation>
+  </decision>
+  <decision id="applicableFee" name="Applicable fee">
+    <variable id="applicableFeeVariable" name="Applicable fee" typeRef="number" />
+    <informationRequirement id="applicableFeeRequiresLevel">
+      <requiredInput href="#levelInput" />
+    </informationRequirement>
+    <informationRequirement id="applicableFeeRequiresSchedule">
+      <requiredDecision href="#feeSchedule" />
+    </informationRequirement>
+    <literalExpression id="applicableFeeExpression">
+      <text>Fee schedule[level = Level].fee[1]</text>
+    </literalExpression>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="feesDiagram">
+      <dmndi:DMNShape id="applicableFeeShape" dmnElementRef="applicableFee">
+        <dc:Bounds height="80" width="180" x="200" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="feeScheduleShape" dmnElementRef="feeSchedule">
+        <dc:Bounds height="80" width="180" x="440" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="levelInputShape" dmnElementRef="levelInput">
+        <dc:Bounds height="45" width="125" x="227" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="applicableFeeRequiresLevelEdge" dmnElementRef="applicableFeeRequiresLevel">
+        <di:waypoint x="289" y="260" />
+        <di:waypoint x="290" y="160" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="applicableFeeRequiresScheduleEdge" dmnElementRef="applicableFeeRequiresSchedule">
+        <di:waypoint x="440" y="120" />
+        <di:waypoint x="380" y="120" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

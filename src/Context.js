@@ -56,6 +56,15 @@ Context.prototype.getDrgElementById = function getDrgElementById(id) {
 };
 
 /**
+ * Item definition by type name, as referenced by a typeRef
+ * @param {string} name
+ * @returns {any | undefined} dmn-moddle item definition
+ */
+Context.prototype.getItemDefinitionByName = function getItemDefinitionByName(name) {
+  return (this.definitions.itemDefinition || []).find((item) => item.name === name);
+};
+
+/**
  * DRG elements the passed element requires, resolved from information- and knowledge requirements
  * @param {any} drgElementDef dmn-moddle DRG element definition
  * @returns {any[]} required dmn-moddle DRG element definitions

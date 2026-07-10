@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="premiumDefinitions" name="Premium" namespace="https://example.com/dmn/premium">
+  <inputData id="ageInput" name="Age">
+    <variable id="ageVariable" name="Age" typeRef="number" />
+  </inputData>
+  <inputData id="coverageInput" name="Coverage">
+    <variable id="coverageVariable" name="Coverage" typeRef="number" />
+  </inputData>
+  <businessKnowledgeModel id="premiumRate" name="Premium rate">
+    <variable id="premiumRateVariable" name="Premium rate" />
+    <encapsulatedLogic id="premiumRateLogic" kind="FEEL">
+      <formalParameter id="rateAgeParameter" name="age" typeRef="number" />
+      <formalParameter id="rateCoverageParameter" name="coverage" typeRef="number" />
+      <literalExpression id="premiumRateBody">
+        <text>(if age &lt; 25 then 0.05 else 0.03) * coverage</text>
+      </literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <decision id="premium" name="Premium">
+    <variable id="premiumVariable" name="Premium" typeRef="number" />
+    <informationRequirement id="premiumRequiresAge">
+      <requiredInput href="#ageInput" />
+    </informationRequirement>
+    <informationRequirement id="premiumRequiresCoverage">
+      <requiredInput href="#coverageInput" />
+    </informationRequirement>
+    <knowledgeRequirement id="premiumRequiresRate">
+      <requiredKnowledge href="#premiumRate" />
+    </knowledgeRequirement>
+    <invocation id="premiumInvocation">
+      <literalExpression id="premiumCalledFunction">
+        <text>Premium rate</text>
+      </literalExpression>
+      <binding>
+        <parameter id="premiumAgeParameter" name="age" typeRef="number" />
+        <literalExpression id="premiumAgeFormula">
+          <text>Age</text>
+        </literalExpression>
+      </binding>
+      <binding>
+        <parameter id="premiumCoverageParameter" name="coverage" typeRef="number" />
+        <literalExpression id="premiumCoverageFormula">
+          <text>Coverage</text>
+        </literalExpression>
+      </binding>
+    </invocation>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="premiumDiagram">
+      <dmndi:DMNShape id="premiumShape" dmnElementRef="premium">
+        <dc:Bounds height="80" width="180" x="200" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="ageInputShape" dmnElementRef="ageInput">
+        <dc:Bounds height="45" width="125" x="147" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="coverageInputShape" dmnElementRef="coverageInput">
+        <dc:Bounds height="45" width="125" x="317" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="premiumRateShape" dmnElementRef="premiumRate">
+        <dc:Bounds height="46" width="135" x="460" y="97" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="premiumRequiresAgeEdge" dmnElementRef="premiumRequiresAge">
+        <di:waypoint x="209" y="260" />
+        <di:waypoint x="250" y="160" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="premiumRequiresCoverageEdge" dmnElementRef="premiumRequiresCoverage">
+        <di:waypoint x="379" y="260" />
+        <di:waypoint x="330" y="160" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="premiumRequiresRateEdge" dmnElementRef="premiumRequiresRate">
+        <di:waypoint x="460" y="120" />
+        <di:waypoint x="380" y="120" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>
