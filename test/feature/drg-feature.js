@@ -56,26 +56,76 @@ Feature('decision requirement graph', () => {
   });
 
   Scenario('a decision without decision logic', () => {
+    // decision logic is optional per the DMN spec (TCK 0088): the decision evaluates to null,
+    // requiring decisions see the null binding — missing logic is a validator concern, not an evaluation error
     const source = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="emptyDefinitions" name="Empty" namespace="https://example.com/dmn/empty">
-  <decision id="undecided" name="Undecided" />
+  <decision id="undecided" name="Undecided">
+    <variable id="undecidedVariable" name="Undecided" />
+  </decision>
+  <decision id="fallback" name="Fallback">
+    <variable id="fallbackVariable" name="Fallback" />
+    <informationRequirement id="fallbackRequiresUndecided">
+      <requiredDecision href="#undecided" />
+    </informationRequirement>
+    <literalExpression id="fallbackExpression"><text>if Undecided = null then "undecided" else "decided"</text></literalExpression>
+  </decision>
 </definitions>`;
 
     /** @type {Definition} */
     let definition;
-    Given('a definition from an inline source where the decision has no logic', async () => {
+    Given('a definition from an inline source where a required decision has no logic', async () => {
       definition = new Definition(await testHelpers.context(source));
     });
 
     /** @type {any} */
-    let error;
-    When('the decision is evaluated', async () => {
-      error = await definition.evaluate('undecided', {}).catch((/** @type {Error} */ err) => err);
+    let result;
+    When('the logic-less decision is evaluated', async () => {
+      result = await definition.evaluate('undecided', {});
     });
 
-    Then('a decision error points out the missing logic', () => {
-      expect(error).to.be.instanceof(DecisionError);
-      expect(error.message).to.match(/no decision logic/);
+    Then('the result is null', () => {
+      expect(result).to.be.null;
+    });
+
+    When('the requiring decision is evaluated', async () => {
+      result = await definition.evaluate('fallback', {});
+    });
+
+    Then('the null binding reached the requiring decision', () => {
+      expect(result).to.equal('undecided');
+    });
+  });
+
+  Scenario('requirement hrefs qualified with the local namespace', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="qualifiedDefinitions" name="Qualified" namespace="https://example.com/dmn/qualified">
+  <inputData id="baseInput" name="Base">
+    <variable id="baseVariable" name="Base" typeRef="number" />
+  </inputData>
+  <decision id="doubled" name="Doubled">
+    <variable id="doubledVariable" name="Doubled" />
+    <informationRequirement id="doubledRequiresBase">
+      <requiredInput href="https://example.com/dmn/qualified#baseInput" />
+    </informationRequirement>
+    <literalExpression id="doubledExpression"><text>Base * 2</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source where the requirement href carries the model namespace', async () => {
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let result;
+    When('the decision is evaluated', async () => {
+      result = await definition.evaluate('doubled', { Base: 21 });
+    });
+
+    Then('the qualified local href resolved', () => {
+      expect(result).to.equal(42);
     });
   });
 

@@ -272,4 +272,83 @@ Feature('hit policy edge cases', () => {
       expect(result).to.deep.equal({ dish: 'Pasta', wine: null });
     });
   });
+
+  Scenario('default output entries apply to multi-hit policies', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('an aggregated COLLECT table with a default output entry', async () => {
+      definition = await getDefinition(
+        factory.decisionTableSource({
+          id: 'extraDays',
+          hitPolicy: 'COLLECT',
+          aggregation: 'MAX',
+          inputs: [{ text: 'Age', typeRef: 'number' }],
+          outputs: [{ name: 'days', typeRef: 'number', defaultOutputEntry: '0' }],
+          rules: [
+            { input: ['< 18'], output: ['5'] },
+            { input: ['>= 60'], output: ['3'] },
+          ],
+        })
+      );
+    });
+
+    /** @type {any} */
+    let result;
+    When('evaluated with an age no rule matches', async () => {
+      result = await definition.evaluate('extraDays', { Age: 30 });
+    });
+
+    Then('the default output entry is the result', () => {
+      expect(result).to.equal(0);
+    });
+
+    Given('a plain COLLECT table with a default output entry', async () => {
+      definition = await getDefinition(
+        factory.decisionTableSource({
+          id: 'bonuses',
+          hitPolicy: 'COLLECT',
+          inputs: [{ text: 'Amount', typeRef: 'number' }],
+          outputs: [{ name: 'bonus', typeRef: 'number', defaultOutputEntry: '5' }],
+          rules: [{ input: ['> 100'], output: ['10'] }],
+        })
+      );
+    });
+
+    When('evaluated with an amount no rule matches', async () => {
+      result = await definition.evaluate('bonuses', { Amount: 50 });
+    });
+
+    Then('the default output entry is the result, not a list', () => {
+      expect(result).to.equal(5);
+    });
+  });
+
+  Scenario('priority ranks on the output columns that declare output values', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('a two-output PRIORITY table where only the first output declares output values', async () => {
+      definition = await getDefinition(
+        factory.decisionTableSource({
+          id: 'approval',
+          hitPolicy: 'PRIORITY',
+          inputs: [{ text: 'Age', typeRef: 'number' }],
+          outputs: [{ name: 'status', outputValues: '"Approved","Declined"' }, { name: 'rate' }],
+          rules: [
+            { input: ['>= 18'], output: ['"Approved"', '"Best"'] },
+            { input: ['> 0'], output: ['"Declined"', '"Standard"'] },
+          ],
+        })
+      );
+    });
+
+    /** @type {any} */
+    let result;
+    When('evaluated with an age matching both rules', async () => {
+      result = await definition.evaluate('approval', { Age: 20 });
+    });
+
+    Then('the declared output values decided the priority', () => {
+      expect(result).to.deep.equal({ status: 'Approved', rate: 'Best' });
+    });
+  });
 });

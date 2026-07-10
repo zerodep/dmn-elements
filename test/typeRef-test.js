@@ -87,6 +87,17 @@ describe('coerceTypeRef(value, typeRef, element)', () => {
     });
   });
 
+  describe('singleton list conversion', () => {
+    it('a singleton list coerces to a scalar type through its element', () => {
+      expect(coerceTypeRef(['John'], 'string', element)).to.equal('John');
+      expect(coerceTypeRef(['42'], 'number', element)).to.equal(42);
+    });
+
+    it('a longer list still fails scalar coercion', () => {
+      expect(() => coerceTypeRef(['John', 'Jane'], 'string', element)).to.throw(DecisionError, /coerce/);
+    });
+  });
+
   describe('pass through', () => {
     it('null, undefined, and missing typeRef pass through', () => {
       expect(coerceTypeRef(null, 'number', element)).to.be.null;

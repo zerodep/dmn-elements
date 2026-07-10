@@ -153,7 +153,7 @@ console.log(await definition.evaluate('riskClass', { Score: 95 }).catch((err) =>
 
 Declares how imported models load — the engine never touches the file system. `resolveImport(importDef)` receives the declared `dmn:Import` (`name`, `namespace`, `locationURI`, `importType`) and returns the imported model's parsed dmn-moddle definitions, or a promise thereof. Each import resolves once per definition; imports of imports resolve recursively.
 
-A typeRef qualified by the import name (`common.tLevel`) then coerces and validates through the imported item definitions. Referencing a declared import without this setting fails the evaluation; an unused import declaration needs no resolver.
+A typeRef qualified by the import name (`common.tLevel`) then coerces and validates through the imported item definitions, and requirement hrefs qualified with an imported namespace (`https://…/common-types#someDecision`) resolve into the imported model — the imported element evaluates in its own model and binds under its qualified name (`common.Some Decision`). Referencing a declared import without this setting fails the evaluation; an unused import declaration needs no resolver.
 
 ```javascript
 import { DmnModdle } from 'dmn-moddle';
@@ -200,8 +200,6 @@ console.log(await definition.evaluate('fee', { Level: 'gold' }));
 console.log(await definition.evaluate('fee', { Level: 'platinum' }).catch((err) => err.message));
 // <levelInput> value "platinum" violates allowed values of tLevel
 ```
-
-Only item definitions resolve across imports — DRG elements of imported models (decisions, business knowledge models) cannot be requirement targets yet.
 
 ## Precompiled definitions
 

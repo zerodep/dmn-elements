@@ -126,6 +126,33 @@ describe('requirements', () => {
   });
 
   describe('imports', () => {
+    it('getDrgElementByHref resolves a bare id, a local href, and rejects a foreign namespace without import', async () => {
+      const drgContext = await testHelpers.context(source);
+      expect(drgContext.getDrgElementByHref('category')).to.have.property('id', 'category');
+      expect(drgContext.getDrgElementByHref('https://example.com/dmn/drg#category')).to.have.property('id', 'category');
+      expect(drgContext.getDrgElementByHref('https://example.com/dmn/other#category')).to.be.undefined;
+    });
+
+    it('an imported DRG element reference throws without a resolver, and before loadImports is awaited', async () => {
+      const refSource = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="refDefinitions" name="Ref" namespace="https://example.com/dmn/ref">
+  <import name="lib" namespace="https://example.com/dmn/lib" locationURI="lib.dmn" importType="https://www.omg.org/spec/DMN/20191111/MODEL/" />
+  <decision id="host" name="Host"><literalExpression id="hostExpression"><text>1</text></literalExpression></decision>
+</definitions>`;
+
+      const bare = await testHelpers.context(refSource);
+      expect(() => bare.getDrgElementByHref('https://example.com/dmn/lib#someDecision')).to.throw(/requires a resolveImport/);
+
+      const withResolver = await testHelpers.context(refSource, {
+        settings: {
+          async resolveImport() {
+            return await testHelpers.moddleContext(refSource);
+          },
+        },
+      });
+      expect(() => withResolver.getDrgElementByHref('https://example.com/dmn/lib#someDecision')).to.throw(/is not loaded/);
+    });
+
     it('an imported item definition reference throws before loadImports is awaited', async () => {
       const importedContext = await testHelpers.context(testHelpers.resource('shipment.dmn'), {
         settings: {

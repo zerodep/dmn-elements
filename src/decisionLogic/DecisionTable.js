@@ -75,6 +75,10 @@ DecisionTable.prototype._matchesRule = function matchesRule(rule, inputValues, i
 /** @internal */
 DecisionTable.prototype._resolveHitPolicy = function resolveHitPolicy(matched, input) {
   const hitPolicy = this.behaviour.hitPolicy || 'UNIQUE';
+  // per the spec, default output entries are the result whenever no rule matched, regardless of hit policy
+  if (!matched.length && (this.behaviour.output || []).some((output) => output.defaultOutputEntry)) {
+    return this._defaultOutput(input);
+  }
   switch (hitPolicy) {
     case 'UNIQUE': {
       if (matched.length > 1) throw this._hitPolicyError(hitPolicy, matched);
@@ -152,18 +156,21 @@ DecisionTable.prototype._defaultOutput = function defaultOutput(input) {
  */
 DecisionTable.prototype._sortByPriority = function sortByPriority(hitPolicy, matched, input) {
   const outputs = this.behaviour.output || [];
+  // ranking considers the output columns that declare output values — a column without them is rank-neutral
   const priorities = outputs.map((output) => {
     const text = output.outputValues?.text;
-    if (!text) throw new DecisionError(`<${this.id}> hit policy ${hitPolicy} requires output values on <${output.id}>`, this);
-    return this.environment.resolveExpression(`[${text}]`, input);
+    return text ? this.environment.resolveExpression(`[${text}]`, input) : null;
   });
+  if (!priorities.some(Boolean)) {
+    throw new DecisionError(`<${this.id}> hit policy ${hitPolicy} requires output values on at least one output`, this);
+  }
 
   const ranked = matched.map((rule) => {
     const value = this._ruleOutput(rule, input);
     const vector =
       outputs.length < 2
         ? [priorityIndex(priorities[0], value)]
-        : outputs.map((output, idx) => priorityIndex(priorities[idx], value[outputName(output)]));
+        : outputs.map((output, idx) => (priorities[idx] ? priorityIndex(priorities[idx], value[outputName(output)]) : 0));
     return { value, vector };
   });
 

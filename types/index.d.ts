@@ -37,6 +37,23 @@ declare module 'dmn-elements' {
 		
 		getDrgElementById(id: string): any;
 		/**
+		 * DRG element by reference href — `#elementId`, qualified with the model
+		 * namespace, or qualified with a declared import's namespace
+		 * @returns dmn-moddle DRG element definition
+		 */
+		getDrgElementByHref(href: string): any | undefined;
+		/**
+		 * DRG element by reference href, with the context that owns it — an element of
+		 * an imported model resolves and evaluates in the imported model's context
+		 * @param href `#elementId`, or `namespace#elementId`
+		 * @throws {DecisionError} when the href references a declared import that is not loaded
+		 */
+		resolveDrgElementRef(href: string): {
+			elementDef: any;
+			context: Context;
+			importName?: string;
+		} | undefined;
+		/**
 		 * Item definition by type name, as referenced by a typeRef
 		 * @param name local name, or qualified by import name (`logistics.tParcel`)
 		 * @returns dmn-moddle item definition
@@ -794,9 +811,8 @@ declare module 'dmn-elements' {
 		encapsulatedLogic: any;
 		/**
 		 * Evaluates to the FEEL-invocable function. The function scope is closed per the DMN
-		 * spec: formal parameters (positional arguments — feelin does not support named
-		 * arguments for host functions) and required knowledge only, never the caller's
-		 * evaluation input.
+		 * spec: formal parameters and required knowledge only, never the caller's evaluation
+		 * input. Callable from FEEL with positional or named arguments.
 		 * @param executeMessage required knowledge bindings
 		 * @param callback called with the function
 		 */

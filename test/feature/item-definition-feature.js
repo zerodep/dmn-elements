@@ -158,6 +158,44 @@ Feature('item definition types', () => {
     });
   });
 
+  Scenario('a collection of a named item definition type', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="pointsDefinitions" name="Points" namespace="https://example.com/dmn/points">
+  <itemDefinition id="tPoint" name="tPoint">
+    <typeRef>number</typeRef>
+  </itemDefinition>
+  <itemDefinition id="tPoints" name="tPoints" isCollection="true">
+    <typeRef>tPoint</typeRef>
+  </itemDefinition>
+  <inputData id="pointsInput" name="Points">
+    <variable id="pointsVariable" name="Points" typeRef="tPoints" />
+  </inputData>
+  <decision id="total" name="Total">
+    <variable id="totalVariable" name="Total" />
+    <informationRequirement id="totalRequiresPoints">
+      <requiredInput href="#pointsInput" />
+    </informationRequirement>
+    <literalExpression id="totalExpression"><text>sum(Points)</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition where the collection element type is itself a named item definition', async () => {
+      definition = await getDefinition(source);
+    });
+
+    /** @type {any} */
+    let result;
+    When('the total is evaluated with several elements', async () => {
+      result = await definition.evaluate('total', { Points: ['1', '2', '3'] });
+    });
+
+    Then('every element followed the alias chain without a false circularity', () => {
+      expect(result).to.equal(6);
+    });
+  });
+
   Scenario('circular item definitions', () => {
     const source = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="circularDefinitions" name="Circular" namespace="https://example.com/dmn/circular">

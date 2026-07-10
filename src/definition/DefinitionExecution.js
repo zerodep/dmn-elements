@@ -80,7 +80,7 @@ DefinitionExecution.prototype._evaluateService = function evaluateService(servic
       );
     }
     const value = input[bound];
-    this.results.set(inputDecision.id, value);
+    this.results.set(refKey(this.context, inputDecision.id), value);
     entry.requirements.push({ id: inputDecision.id, required: inputDecision.id, type: inputDecision.$type, bound, value });
   }
 
@@ -96,15 +96,14 @@ DefinitionExecution.prototype._evaluateService = function evaluateService(servic
 /**
  * Resolve a decision service's output and input decision references
  * @internal
+ * @param {import('../Context.js').Context} [context] the service's owning context
  * @returns {{ outputs: any[], inputDecisions: any[] } | DecisionError}
  */
-DefinitionExecution.prototype._resolveServiceParts = function resolveServiceParts(serviceDef) {
-  const context = this.context;
-
+DefinitionExecution.prototype._resolveServiceParts = function resolveServiceParts(serviceDef, context = this.context) {
   const resolve = (refs, role) => {
     const resolved = [];
     for (const ref of refs || []) {
-      const target = ref?.href?.[0] === '#' ? context.getDrgElementById(ref.href.slice(1)) : ref;
+      const target = ref?.href ? context.getDrgElementByHref(ref.href) : ref;
       if (!target) return new DecisionError(`<${serviceDef.id}> ${role} ${ref?.href} was not found`, serviceDef);
       resolved.push(target);
     }
@@ -129,7 +128,7 @@ DefinitionExecution.prototype._resolveServiceParts = function resolveServicePart
  * result, multiple yield an object keyed by output decision variable name
  * @internal
  */
-DefinitionExecution.prototype._evaluateOutputs = function evaluateOutputs(outputs, input, callback) {
+DefinitionExecution.prototype._evaluateOutputs = function evaluateOutputs(outputs, input, callback, context = this.context) {
   /** @type {Record<string, any>} */
   const combined = {};
 
@@ -137,11 +136,16 @@ DefinitionExecution.prototype._evaluateOutputs = function evaluateOutputs(output
     if (idx >= outputs.length) {
       return callback(null, outputs.length < 2 ? combined[resultName(outputs[0])] : combined);
     }
-    return this._evaluateDecision(outputs[idx], input, (err, result) => {
-      if (err) return callback(err);
-      combined[resultName(outputs[idx])] = result;
-      return next(idx + 1);
-    });
+    return this._evaluateDecision(
+      outputs[idx],
+      input,
+      (err, result) => {
+        if (err) return callback(err);
+        combined[resultName(outputs[idx])] = result;
+        return next(idx + 1);
+      },
+      context
+    );
   };
 
   return next(0);
@@ -149,96 +153,136 @@ DefinitionExecution.prototype._evaluateOutputs = function evaluateOutputs(output
 
 /**
  * @internal
+ * @param {import('../Context.js').Context} [context] owning context — an imported decision evaluates in its own model
  */
-DefinitionExecution.prototype._evaluateDecision = function evaluateDecision(decisionDef, input, callback) {
+DefinitionExecution.prototype._evaluateDecision = function evaluateDecision(decisionDef, input, callback, context = this.context) {
   const id = decisionDef.id;
-  if (this.results.has(id)) {
+  const key = refKey(context, id);
+  if (this.results.has(key)) {
     this.logger.debug(`<${id}> return memoized result`);
-    return callback(null, this.results.get(id));
+    return callback(null, this.results.get(key));
   }
-  if (this.visiting.has(id)) return callback(new DecisionError(`circular requirement detected at <${id}>`, decisionDef));
-  this.visiting.add(id);
+  if (this.visiting.has(key)) return callback(new DecisionError(`circular requirement detected at <${id}>`, decisionDef));
+  this.visiting.add(key);
 
   /** @type {TraceEntry} */
   const entry = { id, type: decisionDef.$type, name: decisionDef.name, requirements: [] };
 
-  this._resolveRequirements(decisionDef, input, entry, (requirementErr) => {
-    if (requirementErr) return callback(requirementErr);
+  this._resolveRequirements(
+    decisionDef,
+    input,
+    entry,
+    (requirementErr) => {
+      if (requirementErr) return callback(requirementErr);
 
-    this.context.getElementById(id).evaluate({ input, trace: entry }, (err, result) => {
-      this.visiting.delete(id);
-      if (err) return callback(err);
-      this.logger.debug(`<${id}> completed`);
-      entry.result = result;
-      this.trace.push(entry);
-      this.results.set(id, result);
-      return callback(null, result);
-    });
-  });
+      context.getElementById(id).evaluate({ input, trace: entry }, (err, result) => {
+        this.visiting.delete(key);
+        if (err) return callback(err);
+        this.logger.debug(`<${id}> completed`);
+        entry.result = result;
+        this.trace.push(entry);
+        this.results.set(key, result);
+        return callback(null, result);
+      });
+    },
+    context
+  );
 };
 
 /**
  * Evaluate required decisions, input data, and business knowledge models, binding
- * results to the evaluation input under each element's variable name and recording
+ * results to the evaluation input under each element's variable name — nested
+ * under the import name for imported elements (`common.Greeting`) — and recording
  * the bindings on the requiring element's trace entry
  * @internal
+ * @param {import('../Context.js').Context} [context] the requiring element's owning context
  */
-DefinitionExecution.prototype._resolveRequirements = function resolveRequirements(drgElementDef, input, entry, callback) {
-  const context = this.context;
+DefinitionExecution.prototype._resolveRequirements = function resolveRequirements(
+  drgElementDef,
+  input,
+  entry,
+  callback,
+  context = this.context
+) {
   const requirements = [...(drgElementDef.informationRequirement || []), ...(drgElementDef.knowledgeRequirement || [])];
+
+  const bind = (importName, name, value) => {
+    if (!importName) {
+      input[name] = value;
+      return name;
+    }
+    input[importName] = { ...input[importName], [name]: value };
+    return `${importName}.${name}`;
+  };
 
   const next = (idx) => {
     if (idx >= requirements.length) return callback(null);
 
     const requirement = requirements[idx];
     const targetRef = requirement.requiredDecision || requirement.requiredInput || requirement.requiredKnowledge;
-    const target = targetRef?.href?.[0] === '#' ? context.getDrgElementById(targetRef.href.slice(1)) : targetRef;
-    if (!target)
+    const resolved = targetRef?.href ? context.resolveDrgElementRef(targetRef.href) : targetRef && { elementDef: targetRef, context };
+    if (!resolved)
       return callback(new DecisionError(`<${drgElementDef.id}> requirement <${requirement.id}> target was not found`, drgElementDef));
+
+    const { elementDef: target, context: targetContext, importName } = resolved;
 
     switch (target.$type) {
       case 'dmn:Decision':
         this.logger.debug(`<${drgElementDef.id}> requires decision <${target.id}>`);
-        return this._evaluateDecision(target, input, (err, result) => {
+        return this._evaluateDecision(
+          target,
+          input,
+          (err, result) => {
+            if (err) return callback(err);
+            const bound = bind(importName, resultName(target), result);
+            this.logger.debug(`<${drgElementDef.id}> bound <${bound}> from decision <${target.id}>`);
+            entry.requirements.push({ id: requirement.id, required: target.id, type: target.$type, bound, value: result });
+            return next(idx + 1);
+          },
+          targetContext
+        );
+      case 'dmn:InputData':
+        this.logger.debug(`<${drgElementDef.id}> requires input data <${target.id}>`);
+        return targetContext.getElementById(target.id).evaluate({ input }, (err, value) => {
           if (err) return callback(err);
-          this.logger.debug(`<${drgElementDef.id}> bound <${resultName(target)}> from decision <${target.id}>`);
-          input[resultName(target)] = result;
+          const name = resultName(target);
+          // an absent value must not shadow environment variables in the expression context
+          if (value !== undefined) bind(importName, name, value);
           entry.requirements.push({
             id: requirement.id,
             required: target.id,
             type: target.$type,
-            bound: resultName(target),
-            value: result,
+            bound: importName ? `${importName}.${name}` : name,
+            value,
           });
-          return next(idx + 1);
-        });
-      case 'dmn:InputData':
-        this.logger.debug(`<${drgElementDef.id}> requires input data <${target.id}>`);
-        return context.getElementById(target.id).evaluate({ input }, (err, value) => {
-          if (err) return callback(err);
-          // an absent value must not shadow environment variables in the expression context
-          if (value !== undefined) input[resultName(target)] = value;
-          entry.requirements.push({ id: requirement.id, required: target.id, type: target.$type, bound: resultName(target), value });
           return next(idx + 1);
         });
       case 'dmn:BusinessKnowledgeModel':
         this.logger.debug(`<${drgElementDef.id}> requires knowledge <${target.id}>`);
-        return this._evaluateBkm(target, (err, invocable) => {
-          if (err) return callback(err);
-          this.logger.debug(`<${drgElementDef.id}> bound function <${resultName(target)}> from <${target.id}>`);
-          input[resultName(target)] = invocable;
-          entry.requirements.push({ id: requirement.id, required: target.id, type: target.$type, bound: resultName(target) });
-          return next(idx + 1);
-        });
+        return this._evaluateBkm(
+          target,
+          (err, invocable) => {
+            if (err) return callback(err);
+            const bound = bind(importName, resultName(target), invocable);
+            this.logger.debug(`<${drgElementDef.id}> bound function <${bound}> from <${target.id}>`);
+            entry.requirements.push({ id: requirement.id, required: target.id, type: target.$type, bound });
+            return next(idx + 1);
+          },
+          targetContext
+        );
       case 'dmn:DecisionService':
         this.logger.debug(`<${drgElementDef.id}> requires decision service <${target.id}>`);
-        return this._bindService(target, (err, invocable) => {
-          if (err) return callback(err);
-          this.logger.debug(`<${drgElementDef.id}> bound function <${resultName(target)}> from <${target.id}>`);
-          input[resultName(target)] = invocable;
-          entry.requirements.push({ id: requirement.id, required: target.id, type: target.$type, bound: resultName(target) });
-          return next(idx + 1);
-        });
+        return this._bindService(
+          target,
+          (err, invocable) => {
+            if (err) return callback(err);
+            const bound = bind(importName, resultName(target), invocable);
+            this.logger.debug(`<${drgElementDef.id}> bound function <${bound}> from <${target.id}>`);
+            entry.requirements.push({ id: requirement.id, required: target.id, type: target.$type, bound });
+            return next(idx + 1);
+          },
+          targetContext
+        );
       default:
         return callback(
           new DecisionError(`<${drgElementDef.id}> requirement <${requirement.id}> unsupported target ${target.$type}`, drgElementDef)
@@ -254,52 +298,66 @@ DefinitionExecution.prototype._resolveRequirements = function resolveRequirement
  * is closed: its own required knowledge is resolved here, the caller's evaluation
  * input never leaks in.
  * @internal
+ * @param {import('../Context.js').Context} [context] owning context — an imported model binds in its own model
  */
-DefinitionExecution.prototype._evaluateBkm = function evaluateBkm(bkmDef, callback) {
+DefinitionExecution.prototype._evaluateBkm = function evaluateBkm(bkmDef, callback, context = this.context) {
   const id = bkmDef.id;
-  if (this.results.has(id)) return callback(null, this.results.get(id));
-  if (this.visiting.has(id)) return callback(new DecisionError(`circular requirement detected at <${id}>`, bkmDef));
-  this.visiting.add(id);
+  const key = refKey(context, id);
+  if (this.results.has(key)) return callback(null, this.results.get(key));
+  if (this.visiting.has(key)) return callback(new DecisionError(`circular requirement detected at <${id}>`, bkmDef));
+  this.visiting.add(key);
 
   /** @type {TraceEntry} */
   const entry = { id, type: bkmDef.$type, name: bkmDef.name, requirements: [] };
 
   const knowledge = {};
-  this._resolveRequirements(bkmDef, knowledge, entry, (requirementErr) => {
-    if (requirementErr) return callback(requirementErr);
+  this._resolveRequirements(
+    bkmDef,
+    knowledge,
+    entry,
+    (requirementErr) => {
+      if (requirementErr) return callback(requirementErr);
 
-    this.context.getElementById(id).evaluate({ input: knowledge }, (err, invocable) => {
-      this.visiting.delete(id);
-      if (err) return callback(err);
-      this.trace.push(entry);
-      this.results.set(id, invocable);
-      return callback(null, invocable);
-    });
-  });
+      context.getElementById(id).evaluate({ input: knowledge }, (err, invocable) => {
+        this.visiting.delete(key);
+        if (err) return callback(err);
+        this.trace.push(entry);
+        this.results.set(key, invocable);
+        return callback(null, invocable);
+      });
+    },
+    context
+  );
 };
 
 /**
  * Bind a decision service as a FEEL-invocable function. Positional parameters are
- * the service's input decisions followed by its input data, per the DMN spec. Each
- * invocation runs a fresh sub-execution — input decision arguments are seeded, the
- * caller's evaluation input never leaks in — sharing this run's cycle guard and trace.
+ * the service's input data followed by its input decisions, in declaration order —
+ * the order the DMN TCK pins (0085). Each invocation runs a fresh sub-execution —
+ * input decision arguments are seeded, the caller's evaluation input never leaks
+ * in — sharing this run's cycle guard and trace.
  * @internal
  */
-DefinitionExecution.prototype._bindService = function bindService(serviceDef, callback) {
+DefinitionExecution.prototype._bindService = function bindService(serviceDef, callback, context = this.context) {
   const id = serviceDef.id;
-  if (this.results.has(id)) return callback(null, this.results.get(id));
+  const key = refKey(context, id);
+  if (this.results.has(key)) return callback(null, this.results.get(key));
 
-  const parts = this._resolveServiceParts(serviceDef);
+  const parts = this._resolveServiceParts(serviceDef, context);
   if (parts instanceof DecisionError) return callback(parts);
 
   const parameters = [
-    ...parts.inputDecisions.map((target) => ({ seedId: target.id, name: resultName(target) })),
     ...parts.inputData.map((target) => ({ seedId: undefined, name: resultName(target) })),
+    ...parts.inputDecisions.map((target) => ({ seedId: target.id, name: resultName(target) })),
   ];
 
   const execution = this;
   const invocable = function invokeService(...args) {
     execution.logger.debug(`<${id}> invoked with ${args.length} argument${args.length === 1 ? '' : 's'}`);
+    // feelin rejects surplus arguments through $args; guard the missing ones (DMN TCK 0085)
+    if (args.length < parameters.length) {
+      throw new DecisionError(`<${id}> expects ${parameters.length} arguments, got ${args.length}`, serviceDef);
+    }
 
     const sub = new DefinitionExecution(execution.definition);
     sub.visiting = execution.visiting;
@@ -309,18 +367,23 @@ DefinitionExecution.prototype._bindService = function bindService(serviceDef, ca
     const scope = {};
     for (const [idx, parameter] of parameters.entries()) {
       scope[parameter.name] = args[idx];
-      if (parameter.seedId) sub.results.set(parameter.seedId, args[idx]);
+      if (parameter.seedId) sub.results.set(refKey(context, parameter.seedId), args[idx]);
     }
 
     let completed = false;
     /** @type {Error | null} */
     let failure = null;
     let outcome;
-    sub._evaluateOutputs(parts.outputs, scope, (err, result) => {
-      completed = true;
-      failure = err;
-      outcome = result;
-    });
+    sub._evaluateOutputs(
+      parts.outputs,
+      scope,
+      (err, result) => {
+        completed = true;
+        failure = err;
+        outcome = result;
+      },
+      context
+    );
     // FEEL invocation is synchronous — evaluation completes within the call today,
     // guard in case async host seams are involved in the future
     if (!completed) throw new DecisionError(`<${id}> did not complete synchronously`, serviceDef);
@@ -329,14 +392,21 @@ DefinitionExecution.prototype._bindService = function bindService(serviceDef, ca
   };
   // parameter names, so a boxed invocation can map named bindings to positions
   invocable.parameters = parameters.map((parameter) => parameter.name);
+  // and for feelin ($args), so FEEL named-argument invocation maps and parameter count is enforced
+  invocable.$args = invocable.parameters;
 
   /** @type {TraceEntry} */
   const entry = { id, type: serviceDef.$type, name: serviceDef.name, requirements: [] };
   this.trace.push(entry);
-  this.results.set(id, invocable);
+  this.results.set(key, invocable);
   return callback(null, invocable);
 };
 
 function resultName(drgElementDef) {
   return drgElementDef.variable?.name || drgElementDef.name || drgElementDef.id;
+}
+
+/** @internal memoization key — namespace-qualified, element ids are only unique per model */
+function refKey(context, id) {
+  return `${context.definitions.namespace}#${id}`;
 }

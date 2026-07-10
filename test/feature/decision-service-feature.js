@@ -37,7 +37,7 @@ const feeServiceSource = `<?xml version="1.0" encoding="UTF-8"?>
     <knowledgeRequirement id="invoiceRequiresFeeService">
       <requiredKnowledge href="#feeService" />
     </knowledgeRequirement>
-    <literalExpression id="invoiceExpression"><text>Fee service("adult", 30)</text></literalExpression>
+    <literalExpression id="invoiceExpression"><text>Fee service(30, "adult")</text></literalExpression>
   </decision>
 </definitions>`;
 
@@ -98,6 +98,63 @@ Feature('decision service', () => {
     });
   });
 
+  Scenario('invoking a decision service with named arguments', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('a definition where the invocation names the service parameters in any order', async () => {
+      const source = feeServiceSource.replace(
+        '<text>Fee service(30, "adult")</text>',
+        '<text>Fee service(Category: "adult", Age: 30)</text>'
+      );
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let result;
+    When('the requiring decision is evaluated', async () => {
+      result = await definition.evaluate('invoice', {});
+    });
+
+    Then('the named arguments mapped to the service parameters', () => {
+      expect(result).to.equal(60);
+    });
+  });
+
+  Scenario('invoking a decision service with the wrong number of arguments', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('a definition where the invocation passes too few arguments', async () => {
+      const source = feeServiceSource.replace('<text>Fee service(30, "adult")</text>', '<text>Fee service(30)</text>');
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let error;
+    When('the requiring decision is evaluated', async () => {
+      error = await definition.evaluate('invoice', {}).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the expected argument count', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/expects 2 arguments/);
+    });
+
+    Given('a definition where the invocation passes too many arguments', async () => {
+      const source = feeServiceSource.replace('<text>Fee service(30, "adult")</text>', '<text>Fee service(30, "adult", true)</text>');
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let result;
+    When('the requiring decision is evaluated', async () => {
+      result = await definition.evaluate('invoice', {});
+    });
+
+    Then('the FEEL invocation yields null', () => {
+      expect(result).to.be.null;
+    });
+  });
+
   Scenario('input decisions are provided, never evaluated', () => {
     /** @type {Definition} */
     let definition;
@@ -107,7 +164,7 @@ Feature('decision service', () => {
 
     /** @type {any} */
     let result;
-    When('the requiring decision invokes the service with category and age arguments', async () => {
+    When('the requiring decision invokes the service with age and category arguments — input data first, per the DMN TCK', async () => {
       result = await definition.evaluate('invoice', {});
     });
 

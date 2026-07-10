@@ -28,7 +28,8 @@
     "prepack": "npm run build:types",
     "cov:html": "c8 -r html -r text mocha -R @bonniernews/hot-bev -p -t 3000",
     "test:lcov": "c8 -r lcov mocha && npm run lint",
-    "build:types": "node scripts/build-types.js"
+    "build:types": "node scripts/build-types.js",
+    "test:tck": "node scripts/tck/run.js"
   },
   "author": {
     "name": "Pål Edman",
@@ -80,6 +81,7 @@
     "globals": "^17.0.0",
     "mocha": "^11.0.1",
     "mocha-cakes-2": "^3.3.0",
+    "nock": "^14.0.16",
     "prettier": "^3.2.5",
     "texample": "^1.0.2"
   }

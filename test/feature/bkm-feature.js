@@ -78,6 +78,43 @@ Feature('business knowledge model', () => {
     });
   });
 
+  Scenario('a business knowledge model invoked with named arguments', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="namedDefinitions" name="Named" namespace="https://example.com/dmn/named">
+  <businessKnowledgeModel id="applyDiscount" name="Apply discount">
+    <variable id="applyDiscountVariable" name="Apply discount" />
+    <encapsulatedLogic id="applyDiscountLogic">
+      <formalParameter id="amountParameter" name="amount" typeRef="number" />
+      <formalParameter id="rateParameter" name="rate" typeRef="number" />
+      <literalExpression id="applyDiscountBody"><text>amount - amount * rate</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <decision id="price" name="Price">
+    <variable id="priceVariable" name="Price" />
+    <knowledgeRequirement id="priceRequiresDiscount">
+      <requiredKnowledge href="#applyDiscount" />
+    </knowledgeRequirement>
+    <literalExpression id="priceExpression"><text>Apply discount(rate: 0.1, amount: 100)</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition where the FEEL invocation names the parameters in reverse declaration order', async () => {
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let result;
+    When('the requiring decision is evaluated', async () => {
+      result = await definition.evaluate('price', {});
+    });
+
+    Then('the named arguments mapped to the formal parameters', () => {
+      expect(result).to.equal(90);
+    });
+  });
+
   Scenario('a business knowledge model with a decision table body', () => {
     /** @type {Definition} */
     let definition;

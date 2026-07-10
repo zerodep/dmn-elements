@@ -61,6 +61,53 @@ Context.prototype.getDrgElementById = function getDrgElementById(id) {
 };
 
 /**
+ * DRG element by reference href — `#elementId`, qualified with the model
+ * namespace, or qualified with a declared import's namespace
+ * @param {string} href
+ * @returns {any | undefined} dmn-moddle DRG element definition
+ */
+Context.prototype.getDrgElementByHref = function getDrgElementByHref(href) {
+  return this.resolveDrgElementRef(href)?.elementDef;
+};
+
+/**
+ * DRG element by reference href, with the context that owns it — an element of
+ * an imported model resolves and evaluates in the imported model's context
+ * @param {string} href `#elementId`, or `namespace#elementId`
+ * @returns {{ elementDef: any, context: Context, importName?: string } | undefined}
+ * @throws {DecisionError} when the href references a declared import that is not loaded
+ */
+Context.prototype.resolveDrgElementRef = function resolveDrgElementRef(href) {
+  const hashIdx = href.indexOf('#');
+  if (hashIdx < 0) {
+    const elementDef = this.getDrgElementById(href);
+    return elementDef && { elementDef, context: this };
+  }
+
+  const namespace = href.slice(0, hashIdx);
+  const id = href.slice(hashIdx + 1);
+  if (!namespace || namespace === this.definitions.namespace) {
+    const elementDef = this.getDrgElementById(id);
+    return elementDef && { elementDef, context: this };
+  }
+
+  const importDef = (this.definitions.import || []).find((declared) => declared.namespace === namespace);
+  if (!importDef) return undefined;
+
+  const imported = this[kImports].get(importDef.name);
+  if (!imported) {
+    throw new DecisionError(
+      typeof this.environment.settings.resolveImport === 'function'
+        ? `<${this.id}> import <${importDef.name}> is not loaded, await loadImports() first`
+        : `<${this.id}> import <${importDef.name}> requires a resolveImport environment setting`,
+      this
+    );
+  }
+  const elementDef = imported.getDrgElementById(id);
+  return elementDef && { elementDef, context: imported, importName: importDef.name };
+};
+
+/**
  * Item definition by type name, as referenced by a typeRef
  * @param {string} name local name, or qualified by import name (`logistics.tParcel`)
  * @returns {any | undefined} dmn-moddle item definition
@@ -149,7 +196,7 @@ Context.prototype.getRequirements = function getRequirements(drgElementDef) {
   for (const requirement of [...(drgElementDef.informationRequirement || []), ...(drgElementDef.knowledgeRequirement || [])]) {
     const target = requirement.requiredDecision || requirement.requiredInput || requirement.requiredKnowledge;
     // dmn-moddle keeps DRG edges as unresolved DMNElementReference hrefs, e.g. #decisionId
-    const resolved = target?.href?.[0] === '#' ? this.getDrgElementById(target.href.slice(1)) : target;
+    const resolved = target?.href ? this.getDrgElementByHref(target.href) : target;
     if (resolved) required.push(resolved);
   }
   return required;

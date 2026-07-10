@@ -13,3 +13,19 @@
 - Opt-in decision result validation via the environment setting `validateResult` — results are coerced and validated against the decision variable type
 - Imported type libraries via the environment setting `resolveImport` — the host resolves a declared `dmn:Import` to its parsed definitions (async supported); qualified typeRefs like `logistics.tParcel` then coerce and validate through the imported item definitions
 - `serializeDefinitions(definitions)` — precompile parsed definitions to lean JSON; the revived JSON evaluates without dmn-moddle at runtime
+- FEEL named-argument invocation of business knowledge models, decision services, and boxed function definitions
+- Imported DRG elements — requirement hrefs qualified with an imported namespace resolve into the imported model; the imported element evaluates in its own model and binds under its qualified name (`common.Greeting`)
+
+### Changed
+
+- Decision service positional parameters are input data followed by input decisions, per the DMN TCK
+- A decision without decision logic evaluates to null instead of failing
+- Invoking a function with surplus arguments yields null; a decision service invoked with too few arguments fails
+
+### Fixed
+
+- Default output entries apply when no rule matches, regardless of hit policy
+- PRIORITY and OUTPUT ORDER rank on the output columns that declare output values
+- A one-element list coerces to its element for scalar types (DMN singleton list conversion)
+- Collections of a named item definition type no longer trip the circular type guard
+- Requirement hrefs qualified with the model's own namespace resolve

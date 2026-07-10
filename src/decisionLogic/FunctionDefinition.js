@@ -63,6 +63,8 @@ FunctionDefinition.prototype.evaluate = function evaluateFunctionDefinition(inpu
   };
   // formal parameter names, so a boxed invocation can map named bindings to positions
   invocable.parameters = parameters.map((parameter) => parameter.name);
+  // and for feelin ($args), so FEEL named-argument invocation maps and parameter count is enforced
+  invocable.$args = invocable.parameters;
 
   return invocable;
 };

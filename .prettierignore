@@ -6,3 +6,4 @@ test/resources/*.dmn
 *.dmn
 types/index.d.ts
 types/index.d.ts.map
+scripts/tck/REPORT.md

@@ -61,6 +61,9 @@ function coerce(value, typeRef, element, chain) {
   const type = typeAliases[typeRef.replace(/\s/g, '').toLowerCase()];
   if (!type) return coerceItemDefinition(value, typeRef, element, chain);
 
+  // DMN singleton list conversion — a one-element list converts to its element for a scalar type
+  if (Array.isArray(value) && value.length === 1) return coerce(value[0], typeRef, element, chain);
+
   switch (type) {
     case 'string':
       if (typeof value === 'string') return value;
@@ -115,9 +118,13 @@ function coerceItem(value, itemDef, element, chain) {
     if (!Array.isArray(value)) {
       throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to collection ${itemName(itemDef)}`, element);
     }
-    return value.map((item) => (item === null || item === undefined ? item : coerceItemValue(item, itemDef, element, chain)));
+    // a fresh chain per element — like components, descending into the value makes recursion finite
+    return value.map((item) => (item === null || item === undefined ? item : coerceItemValue(item, itemDef, element, new Set())));
   }
 
+  // DMN singleton list conversion — a one-element list converts to its element for a non-collection type
+  if (Array.isArray(value) && value.length === 1) value = value[0];
+  if (value === null || value === undefined) return value;
   return coerceItemValue(value, itemDef, element, chain);
 }
 

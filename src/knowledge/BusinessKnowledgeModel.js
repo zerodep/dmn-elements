@@ -32,9 +32,8 @@ export function BusinessKnowledgeModelBehaviour(element) {
 
 /**
  * Evaluates to the FEEL-invocable function. The function scope is closed per the DMN
- * spec: formal parameters (positional arguments — feelin does not support named
- * arguments for host functions) and required knowledge only, never the caller's
- * evaluation input.
+ * spec: formal parameters and required knowledge only, never the caller's evaluation
+ * input. Callable from FEEL with positional or named arguments.
  * @param {{ input?: Record<string, any> }} executeMessage required knowledge bindings
  * @param {(err: Error | null, result?: (...args: any[]) => any) => void} callback called with the function
  */
@@ -87,6 +86,8 @@ BusinessKnowledgeModelBehaviour.prototype.execute = function execute(executeMess
   };
   // formal parameter names, so a boxed invocation can map named bindings to positions
   invokeBkm.parameters = parameters.map((parameter) => parameter.name);
+  // and for feelin ($args), so FEEL named-argument invocation maps and parameter count is enforced
+  invokeBkm.$args = invokeBkm.parameters;
 
   return callback(null, invokeBkm);
 };

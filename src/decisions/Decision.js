@@ -31,7 +31,8 @@ export function DecisionBehaviour(element) {
 
 DecisionBehaviour.prototype.execute = function execute(executeMessage, callback) {
   const decisionLogic = this.decisionLogic;
-  if (!decisionLogic) return callback(new DecisionError(`<${this.id}> has no decision logic`, this));
+  // decision logic is optional per the spec — the decision evaluates to null (missing logic is a validator concern)
+  if (!decisionLogic) return callback(null, null);
   if (executeMessage?.trace) executeMessage.trace.decisionLogic = decisionLogic.$type;
 
   // opt-in via the validateResult setting: the result is coerced and validated

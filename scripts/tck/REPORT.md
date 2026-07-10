@@ -1,0 +1,189 @@
+# DMN TCK conformance sweep
+
+Assertions: 3495 — pass 2966 (84.9%), mismatch 328, error 201
+
+## compliance-level-2: 126/126 (100.0%)
+
+- PASS 0001-input-data-string: 1/1
+- PASS 0002-input-data-number: 1/1
+- PASS 0003-input-data-string-allowed-values: 1/1
+- PASS 0004-simpletable-U: 3/3
+- PASS 0005-simpletable-A: 3/3
+- PASS 0006-simpletable-P1: 3/3
+- PASS 0007-simpletable-P2: 3/3
+- PASS 0008-LX-arithmetic: 3/3
+- PASS 0009-invocation-arithmetic: 3/3
+- PASS 0010-multi-output-U: 3/3
+- PASS 0100-feel-constants: 2/2
+- PASS 0101-feel-constants: 6/6
+- PASS 0102-feel-constants: 4/4
+- PASS 0105-feel-math: 33/33
+- PASS 0106-feel-ternary-logic: 18/18
+- PASS 0107-feel-ternary-logic-not: 3/3
+- PASS 0108-first-hitpolicy: 3/3
+- PASS 0109-ruleOrder-hitpolicy: 3/3
+- PASS 0110-outputOrder-hitpolicy: 3/3
+- PASS 0111-first-hitpolicy-singleoutputcol: 3/3
+- PASS 0112-ruleOrder-hitpolicy-singleinoutcol: 3/3
+- PASS 0113-outputOrder-hitpolicy-singleinoutcol: 3/3
+- PASS 0114-min-collect-hitpolicy: 3/3
+- PASS 0115-sum-collect-hitpolicy: 3/3
+- PASS 0116-count-collect-hitpolicy: 3/3
+- PASS 0117-multi-any-hitpolicy: 3/3
+- PASS 0118-multi-priority-hitpolicy: 3/3
+- PASS 0119-multi-collect-hitpolicy: 3/3
+
+## compliance-level-3: 2840/3369 (84.3%)
+
+- PASS 0001-filter: 1/1
+- PASS 0002-string-functions: 4/4
+- PASS 0003-iteration: 1/1
+- PASS 0004-lending: 11/11
+- PASS 0005-literal-invocation: 3/3
+- PASS 0006-join: 1/1
+- PARTIAL 0007-date-time: 16/19 (mismatch, evaluation-error)
+- PASS 0008-listGen: 10/10
+- PASS 0009-append-flatten: 10/10
+- PASS 0010-concatenate: 6/6
+- PASS 0011-insert-remove: 6/6
+- PASS 0012-list-functions: 19/19
+- PASS 0013-sort: 3/3
+- PASS 0014-loan-comparison: 2/2
+- PASS 0016-some-every: 8/8
+- PASS 0017-tableTests: 4/4
+- PASS 0020-vacation-days: 7/7
+- PASS 0021-singleton-list: 5/5
+- PASS 0030-user-defined-functions: 2/2
+- PASS 0031-user-defined-functions: 3/3
+- PASS 0032-conditionals: 6/6
+- PASS 0033-for-loops: 4/4
+- PASS 0034-drg-scopes: 12/12
+- PASS 0035-test-structure-output: 3/3
+- PARTIAL 0036-dt-variable-input: 22/24 (mismatch)
+- PASS 0037-dt-on-bkm-implicit-params: 2/2
+- PASS 0038-dt-on-bkm-explicit-params: 2/2
+- PASS 0039-dt-list-semantics: 2/2
+- PASS 0040-singlenestedcontext: 3/3
+- PASS 0041-multiple-nestedcontext: 3/3
+- PARTIAL 0050-feel-abs-function: 13/17 (mismatch)
+- PASS 0051-feel-sqrt-function: 15/15
+- PASS 0052-feel-exp-function: 15/15
+- PASS 0053-feel-log-function: 15/15
+- PASS 0054-feel-even-function: 17/17
+- PASS 0055-feel-odd-function: 17/17
+- PASS 0056-feel-modulo-function: 28/28
+- PARTIAL 0057-feel-context: 10/11 (mismatch)
+- PASS 0058-feel-number-function: 21/21
+- PASS 0059-feel-all-function: 19/19
+- PASS 0060-feel-any-function: 17/17
+- PASS 0061-feel-median-function: 14/14
+- PASS 0062-feel-mode-function: 13/13
+- PASS 0063-feel-stddev-function: 12/12
+- PASS 0064-feel-conjunction: 19/19
+- PASS 0065-feel-disjunction: 19/19
+- PASS 0066-feel-negation: 6/6
+- PASS 0067-feel-split-function: 9/9
+- PARTIAL 0068-feel-equality: 106/114 (mismatch)
+- PARTIAL 0069-feel-list: 32/35 (mismatch)
+- PARTIAL 0070-feel-instance-of: 40/142 (evaluation-error, mismatch)
+- PASS 0071-feel-between: 38/38
+- PARTIAL 0072-feel-in: 322/327 (mismatch)
+- PASS 0073-feel-comments: 3/3
+- PARTIAL 0074-feel-properties: 43/53 (mismatch)
+- PASS 0075-feel-exponent: 12/12
+- PARTIAL 0076-feel-external-java: 4/18 (evaluation-error)
+- PASS 0077-feel-nan: 1/1
+- PASS 0078-feel-infinity: 2/2
+- PASS 0080-feel-getvalue-function: 14/14
+- PASS 0081-feel-getentries-function: 9/9
+- PARTIAL 0082-feel-coercion: 20/36 (mismatch)
+- PASS 0083-feel-unicode: 14/14
+- PARTIAL 0084-feel-for-loops: 19/24 (evaluation-error, mismatch)
+- PARTIAL 0085-decision-services: 18/19 (mismatch)
+- PASS 0086-import: 2/2
+- PASS 0087-chapter-11-example: 9/9
+- PASS 0088-no-decision-logic: 1/1
+- PASS 0089-nested-inputdata-imports: 1/1
+- PASS 0090-feel-paths: 4/4
+- PASS 0091-local-hrefs: 1/1
+- PARTIAL 0092-feel-lambda: 17/18 (mismatch)
+- PARTIAL 0093-feel-at-literals: 10/19 (mismatch, evaluation-error)
+- PASS 0094-feel-product-function: 13/13
+- PASS 0095-feel-day-of-year-function: 19/19
+- PASS 0096-feel-day-of-week-function: 12/12
+- PASS 0097-feel-month-of-year-function: 12/12
+- PASS 0098-feel-week-of-year-function: 19/19
+- PARTIAL 0099-arithmetic-negation: 10/14 (mismatch)
+- PARTIAL 0100-arithmetic: 889/1087 (mismatch, evaluation-error)
+- PARTIAL 0103-feel-is-function: 48/50 (mismatch)
+- PARTIAL 1100-feel-decimal-function: 9/10 (mismatch)
+- PASS 1101-feel-floor-function: 17/17
+- PASS 1102-feel-ceiling-function: 17/17
+- PASS 1103-feel-substring-function: 11/11
+- PASS 1104-feel-string-length-function: 6/6
+- PASS 1105-feel-upper-case-function: 8/8
+- PASS 1106-feel-lower-case-function: 9/9
+- PASS 1107-feel-substring-before-function: 9/9
+- PASS 1108-feel-substring-after-function: 10/10
+- PARTIAL 1109-feel-replace-function: 26/28 (evaluation-error)
+- PASS 1110-feel-contains-function: 10/10
+- PARTIAL 1111-feel-matches-function: 17/40 (mismatch)
+- PARTIAL 1115-feel-date-function: 40/52 (evaluation-error, mismatch)
+- PARTIAL 1116-feel-time-function: 64/83 (evaluation-error, mismatch)
+- PARTIAL 1117-feel-date-and-time-function: 73/88 (evaluation-error, mismatch)
+- PARTIAL 1120-feel-duration-function: 48/50 (mismatch)
+- PARTIAL 1121-feel-years-and-months-duration-function: 33/36 (evaluation-error)
+- PARTIAL 1130-feel-interval: 6/14 (mismatch)
+- PASS 1131-feel-function-invocation: 8/8
+- PASS 1140-feel-string-join-function: 22/22
+- PARTIAL 1141-feel-round-up-function: 14/16 (mismatch)
+- PARTIAL 1142-feel-round-down-function: 14/16 (mismatch)
+- PARTIAL 1143-feel-round-half-up-function: 14/16 (mismatch)
+- PARTIAL 1144-feel-round-half-down-function: 14/16 (mismatch)
+- PASS 1145-feel-context-function: 18/18
+- PASS 1146-feel-context-put-function: 30/30
+- PASS 1147-feel-context-merge-function: 14/14
+- PARTIAL 1148-feel-now-function: 1/2 (evaluation-error)
+- PARTIAL 1149-feel-today-function: 1/2 (mismatch)
+- PARTIAL 1150-boxed-conditional: 1/3 (mismatch)
+- PARTIAL 1151-boxed-filter: 2/4 (mismatch)
+- FAIL 1152-boxed-for: 0/2 (mismatch)
+- PARTIAL 1153-boxed-some: 2/5 (mismatch)
+- PARTIAL 1154-boxed-every: 2/5 (mismatch)
+- PARTIAL 1155-list-replace-function: 15/22 (mismatch)
+- PARTIAL 1156-range-function: 29/56 (mismatch, evaluation-error)
+- PASS 1161-boxed-list-expression: 2/2
+
+## Failure categories
+
+### mismatch (328)
+
+- 0007-date-time#001:Date — expected {"fromString":{"$temporal":"date","text":"2015-12-24"},"fromDateTime":{"$tempora… got {"fromString":"2015-12-24T00:00:00.000Z","fromDateTime":"2016-12-25T00:00:00.000…
+- 0007-date-time#001:cOffset — expected {"$temporal":"duration","text":"-PT1H"} got null
+- 0036-dt-variable-input#_20445ee0-744d-4488-a90e-136701510871:Compare Boolean — expected "Not same boolean" got "Same boolean"
+- 0036-dt-variable-input#_58109f16-2e9b-496e-bfff-5f0adbfa0279:Compare Boolean — expected "Not same boolean" got "Same boolean"
+- 0050-feel-abs-function#011:decision011 — expected {"$temporal":"duration","text":"P1D"} got null
+- 0050-feel-abs-function#011_a:decision011_a — expected {"$temporal":"duration","text":"P1D"} got null
+- 0050-feel-abs-function#012:decision012 — expected {"$temporal":"duration","text":"P1Y"} got null
+- 0050-feel-abs-function#012_a:decision012_a — expected {"$temporal":"duration","text":"P1Y"} got null
+- 0057-feel-context#008:decision008 — expected null got {"foo":"baz"}
+- 0068-feel-equality#ym_duration_006:ym_duration_006 — expected null got true
+- 0068-feel-equality#range_006:range_006 — expected false got true
+- 0068-feel-equality#range_007:range_007 — expected false got true
+- … 316 more
+
+### evaluation-error (201)
+
+- 0007-date-time#001:Time3 — not implemented: time(..., offset)
+- 0070-feel-instance-of#null_001:null_001 — Right-hand side of 'instanceof' is not an object
+- 0070-feel-instance-of#null_004:null_004 — Right-hand side of 'instanceof' is not an object
+- 0070-feel-instance-of#null_007:null_007 — not implemented: SpecialType
+- 0070-feel-instance-of#null_008:null_008 — args[3] is not a function
+- 0070-feel-instance-of#null_009:null_009 — not implemented: SpecialType
+- 0070-feel-instance-of#null_010:null_010 — not implemented: SpecialType
+- 0070-feel-instance-of#null_012:null_012 — args[3] is not a function
+- 0070-feel-instance-of#number_001:number_001 — Right-hand side of 'instanceof' is not an object
+- 0070-feel-instance-of#number_003:number_003 — Right-hand side of 'instanceof' is not an object
+- 0070-feel-instance-of#number_004:number_004 — Right-hand side of 'instanceof' is not an object
+- 0070-feel-instance-of#number_007:number_007 — not implemented: SpecialType
+- … 189 more

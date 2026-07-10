@@ -213,6 +213,7 @@ Feature('function definition decision logic', () => {
       <contextEntry id="oddBodyFnEntry">
         <variable id="oddBodyFnVariable" name="fn" />
         <functionDefinition id="oddBodyFunction">
+          <formalParameter id="oddBodyParameter" name="n" typeRef="number" />
           <unaryTests id="oddBodyTests" />
         </functionDefinition>
       </contextEntry>
