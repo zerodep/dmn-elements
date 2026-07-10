@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" id="logisticsTypesDefinitions" name="Logistics types" namespace="https://example.com/dmn/logistics-types">
+  <itemDefinition id="tWeight" name="tWeight">
+    <typeRef>number</typeRef>
+  </itemDefinition>
+  <itemDefinition id="tParcel" name="tParcel">
+    <itemComponent id="weightComponent" name="weight">
+      <typeRef>tWeight</typeRef>
+    </itemComponent>
+    <itemComponent id="expressComponent" name="express">
+      <typeRef>boolean</typeRef>
+    </itemComponent>
+  </itemDefinition>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="logisticsTypesDiagram" />
+  </dmndi:DMNDI>
+</definitions>

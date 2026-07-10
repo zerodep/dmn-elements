@@ -11,6 +11,11 @@ Walks the decision requirement graph (DRG) and evaluates decisions — decision 
 
 Sibling of [bpmn-elements](https://github.com/paed01/bpmn-elements), sharing its idiom: isomorphic, tree-shakeable, minimal runtime dependencies.
 
+## Documentation
+
+- [API](docs/API.md) — `Definition` and environment settings
+- [Examples](docs/Examples.md) — runnable examples
+
 ## Debug
 
 Element execution is logged through the pluggable `Logger` environment option — silent by default. To follow the execution tree, pass a [debug](https://www.npmjs.com/package/debug)-backed logger:

@@ -55,7 +55,12 @@ Definition.prototype.evaluate = function evaluate(decisionId, input, callback) {
       this.evaluate(decisionId, input, (err, result) => (err ? reject(err) : resolve(result)));
     });
   }
-  return new DefinitionExecution(this).evaluate(decisionId, input || {}, callback);
+  const run = () => new DefinitionExecution(this).evaluate(decisionId, input || {}, callback);
+  // imports resolve through the async resolveImport setting before the run starts,
+  // so lookups during the synchronous evaluation are served from the loaded cache
+  const loading = this.context.loadImports();
+  if (!loading) return run();
+  return void loading.then(run, callback);
 };
 
 /**
@@ -93,11 +98,16 @@ Definition.prototype.trace = function trace(decisionId, input, callback) {
     });
   }
 
-  const execution = new DefinitionExecution(this);
-  return execution.evaluate(decisionId, input || {}, (err, result) => {
-    if (err) return callback(err);
-    return callback(null, { result, trace: execution.trace });
-  });
+  const run = () => {
+    const execution = new DefinitionExecution(this);
+    return execution.evaluate(decisionId, input || {}, (err, result) => {
+      if (err) return callback(err);
+      return callback(null, { result, trace: execution.trace });
+    });
+  };
+  const loading = this.context.loadImports();
+  if (!loading) return run();
+  return void loading.then(run, callback);
 };
 
 /** @param {string} id */

@@ -1,8 +1,11 @@
 import { Environment } from './Environment.js';
 import { Decision } from './decisions/Decision.js';
+import { DecisionError } from './error/Errors.js';
 import { InputData } from './io/InputData.js';
 import { BusinessKnowledgeModel } from './knowledge/BusinessKnowledgeModel.js';
 import { KnowledgeSource } from './knowledge/KnowledgeSource.js';
+
+const kImports = Symbol.for('imports');
 
 const defaultTypes = {
   'dmn:Decision': Decision,
@@ -30,6 +33,8 @@ export function Context(definitions, environment) {
   this.environment = environment || new Environment();
   /** @internal minted element instances keyed by id */
   this.refs = new Map();
+  /** @internal resolved import contexts keyed by import name */
+  this[kImports] = new Map();
 }
 
 /**
@@ -57,11 +62,81 @@ Context.prototype.getDrgElementById = function getDrgElementById(id) {
 
 /**
  * Item definition by type name, as referenced by a typeRef
- * @param {string} name
+ * @param {string} name local name, or qualified by import name (`logistics.tParcel`)
  * @returns {any | undefined} dmn-moddle item definition
  */
 Context.prototype.getItemDefinitionByName = function getItemDefinitionByName(name) {
-  return (this.definitions.itemDefinition || []).find((item) => item.name === name);
+  return this.resolveItemDefinition(name)?.itemDefinition;
+};
+
+/**
+ * Item definition by type name, with the context that owns it — an imported item
+ * definition resolves its own nested type references in the imported model
+ * @param {string} name local name, or qualified by import name (`logistics.tParcel`)
+ * @returns {{ itemDefinition: any, context: Context } | undefined}
+ * @throws {DecisionError} when the name references a declared import that is not loaded
+ */
+Context.prototype.resolveItemDefinition = function resolveItemDefinition(name) {
+  const local = (this.definitions.itemDefinition || []).find((item) => item.name === name);
+  if (local) return { itemDefinition: local, context: this };
+
+  const dotIdx = name.indexOf('.');
+  if (dotIdx < 1) return undefined;
+  const importName = name.slice(0, dotIdx);
+  if (!(this.definitions.import || []).some((importDef) => importDef.name === importName)) return undefined;
+
+  const imported = this[kImports].get(importName);
+  if (!imported) {
+    throw new DecisionError(
+      typeof this.environment.settings.resolveImport === 'function'
+        ? `<${this.id}> import <${importName}> is not loaded, await loadImports() first`
+        : `<${this.id}> import <${importName}> requires a resolveImport environment setting`,
+      this
+    );
+  }
+  return imported.resolveItemDefinition(name.slice(dotIdx + 1));
+};
+
+/**
+ * Resolve declared imports through the `resolveImport` environment setting —
+ * `resolveImport(importDef)` returns the imported model's parsed dmn-moddle
+ * definitions, or a promise thereof (the host parses; dmn-moddle is async).
+ * Recursive imports resolve once per namespace, cycles bind to the loaded model.
+ *
+ * Definition#evaluate and #trace await this before each run; call it directly when
+ * using the context synchronously. Without the setting, loading is skipped and a
+ * reference to an imported type fails the evaluation instead.
+ * @param {Map<string, Context>} [seen] resolved contexts by namespace
+ * @returns {Promise<Context> | undefined} undefined when there is nothing to load
+ */
+Context.prototype.loadImports = function loadImports(seen) {
+  const imports = this.definitions.import || [];
+  if (!imports.length) return;
+  if (imports.every((importDef) => this[kImports].has(importDef.name))) return;
+  const resolveImport = this.environment.settings.resolveImport;
+  if (typeof resolveImport !== 'function') return;
+
+  return this._loadImports(resolveImport, seen || new Map([[this.definitions.namespace, this]]));
+};
+
+/** @internal */
+Context.prototype._loadImports = async function loadImportsAsync(resolveImport, seen) {
+  for (const importDef of this.definitions.import) {
+    if (this[kImports].has(importDef.name)) continue;
+
+    let imported = seen.get(importDef.namespace);
+    if (!imported) {
+      const definitions = await resolveImport(importDef);
+      if (!definitions) {
+        throw new DecisionError(`<${this.id}> import <${importDef.name}> did not resolve (${importDef.namespace})`, this);
+      }
+      imported = new this.constructor(definitions, this.environment);
+      seen.set(importDef.namespace, imported);
+      await imported.loadImports(seen);
+    }
+    this[kImports].set(importDef.name, imported);
+  }
+  return this;
 };
 
 /**

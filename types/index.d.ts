@@ -38,9 +38,35 @@ declare module 'dmn-elements' {
 		getDrgElementById(id: string): any;
 		/**
 		 * Item definition by type name, as referenced by a typeRef
+		 * @param name local name, or qualified by import name (`logistics.tParcel`)
 		 * @returns dmn-moddle item definition
 		 */
 		getItemDefinitionByName(name: string): any | undefined;
+		/**
+		 * Item definition by type name, with the context that owns it — an imported item
+		 * definition resolves its own nested type references in the imported model
+		 * @param name local name, or qualified by import name (`logistics.tParcel`)
+		 * @throws {DecisionError} when the name references a declared import that is not loaded
+		 */
+		resolveItemDefinition(name: string): {
+			itemDefinition: any;
+			context: Context;
+		} | undefined;
+		/**
+		 * Resolve declared imports through the `resolveImport` environment setting —
+		 * `resolveImport(importDef)` returns the imported model's parsed dmn-moddle
+		 * definitions, or a promise thereof (the host parses; dmn-moddle is async).
+		 * Recursive imports resolve once per namespace, cycles bind to the loaded model.
+		 *
+		 * Definition#evaluate and #trace await this before each run; call it directly when
+		 * using the context synchronously. Without the setting, loading is skipped and a
+		 * reference to an imported type fails the evaluation instead.
+		 * @param seen resolved contexts by namespace
+		 * @returns undefined when there is nothing to load
+		 */
+		loadImports(seen?: Map<string, Context>): Promise<Context> | undefined;
+		
+		_loadImports(resolveImport: any, seen: any): Promise<this>;
 		/**
 		 * DRG elements the passed element requires, resolved from information- and knowledge requirements
 		 * @param drgElementDef dmn-moddle DRG element definition

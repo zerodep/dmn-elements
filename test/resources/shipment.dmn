@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="shipmentDefinitions" name="Shipment" namespace="https://example.com/dmn/shipment">
+  <import name="logistics" namespace="https://example.com/dmn/logistics-types" locationURI="logistics-types.dmn" importType="https://www.omg.org/spec/DMN/20191111/MODEL/" />
+  <inputData id="parcelInput" name="Parcel">
+    <variable id="parcelVariable" name="Parcel" typeRef="logistics.tParcel" />
+  </inputData>
+  <decision id="shippingCost" name="Shipping cost">
+    <variable id="shippingCostVariable" name="Shipping cost" typeRef="number" />
+    <informationRequirement id="shippingCostRequiresParcel">
+      <requiredInput href="#parcelInput" />
+    </informationRequirement>
+    <decisionTable id="shippingCostTable" hitPolicy="FIRST">
+      <input id="weightInput">
+        <inputExpression id="weightInputExpression" typeRef="number">
+          <text>Parcel.weight</text>
+        </inputExpression>
+      </input>
+      <input id="expressInput">
+        <inputExpression id="expressInputExpression" typeRef="boolean">
+          <text>Parcel.express</text>
+        </inputExpression>
+      </input>
+      <output id="costOutput" name="cost" typeRef="number" />
+      <rule id="heavyExpressRule">
+        <inputEntry id="heavyExpressWeight">
+          <text>&gt; 5</text>
+        </inputEntry>
+        <inputEntry id="heavyExpressFlag">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="heavyExpressCost">
+          <text>40</text>
+        </outputEntry>
+      </rule>
+      <rule id="heavyRule">
+        <inputEntry id="heavyWeight">
+          <text>&gt; 5</text>
+        </inputEntry>
+        <inputEntry id="heavyFlag">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="heavyCost">
+          <text>25</text>
+        </outputEntry>
+      </rule>
+      <rule id="lightExpressRule">
+        <inputEntry id="lightExpressWeight">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="lightExpressFlag">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="lightExpressCost">
+          <text>20</text>
+        </outputEntry>
+      </rule>
+      <rule id="lightRule">
+        <inputEntry id="lightWeight">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="lightFlag">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="lightCost">
+          <text>10</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="shipmentDiagram">
+      <dmndi:DMNShape id="shippingCostShape" dmnElementRef="shippingCost">
+        <dc:Bounds height="80" width="180" x="200" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="parcelInputShape" dmnElementRef="parcelInput">
+        <dc:Bounds height="45" width="125" x="227" y="260" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="shippingCostRequiresParcelEdge" dmnElementRef="shippingCostRequiresParcel">
+        <di:waypoint x="289" y="260" />
+        <di:waypoint x="290" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

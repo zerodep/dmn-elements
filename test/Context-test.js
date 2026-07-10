@@ -124,4 +124,21 @@ describe('requirements', () => {
     expect(requirement.type).to.equal('dmn:AuthorityRequirement');
     expect(requirement.required.href).to.equal('#policyManual');
   });
+
+  describe('imports', () => {
+    it('an imported item definition reference throws before loadImports is awaited', async () => {
+      const importedContext = await testHelpers.context(testHelpers.resource('shipment.dmn'), {
+        settings: {
+          async resolveImport() {
+            return await testHelpers.moddleContext(testHelpers.resource('logistics-types.dmn'));
+          },
+        },
+      });
+
+      expect(() => importedContext.getItemDefinitionByName('logistics.tParcel')).to.throw(/is not loaded, await loadImports/);
+
+      await importedContext.loadImports();
+      expect(importedContext.getItemDefinitionByName('logistics.tParcel')).to.have.property('name', 'tParcel');
+    });
+  });
 });

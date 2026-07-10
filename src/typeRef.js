@@ -89,14 +89,22 @@ function coerce(value, typeRef, element, chain) {
   throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to ${typeRef}`, element);
 }
 
-/** @internal look the typeRef up among the definitions' item definitions, guarding alias cycles */
+/** @internal look the typeRef up among the definitions' (or their imports') item definitions, guarding alias cycles */
 function coerceItemDefinition(value, typeRef, element, chain) {
-  const itemDefinition = element.context?.getItemDefinitionByName(typeRef);
-  if (!itemDefinition) return value;
+  const resolved = element.context?.resolveItemDefinition(typeRef);
+  if (!resolved) return value;
 
-  if (chain.has(typeRef)) throw new DecisionError(`<${element.id}> circular item definition <${typeRef}>`, element);
-  chain.add(typeRef);
-  return coerceItem(value, itemDefinition, element, chain);
+  // cycle key qualified by the owning model — equal names in different models are distinct types
+  const key = `${resolved.context.definitions.namespace}#${resolved.itemDefinition.name}`;
+  if (chain.has(key)) throw new DecisionError(`<${element.id}> circular item definition <${typeRef}>`, element);
+  chain.add(key);
+
+  // an imported item definition resolves its nested type references in its own model
+  const owner =
+    resolved.context === element.context
+      ? element
+      : { id: element.id, type: element.type, environment: element.environment, context: resolved.context };
+  return coerceItem(value, resolved.itemDefinition, owner, chain);
 }
 
 /** @internal an item definition or item component — a collection coerces each element */
