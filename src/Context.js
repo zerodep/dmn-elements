@@ -223,9 +223,61 @@ Context.prototype.getElementById = function getElementById(id) {
 };
 
 /**
+ * Load registered environment extensions for a DRG element — runs when the element
+ * is minted. Each extension factory is called with the element and this context and
+ * may decorate the element; returned activate/deactivate hooks run around each
+ * evaluation (see docs/API.md)
+ * @param {import('./drgElement/DrgElement.js').DrgElement} element
+ * @returns {Extensions | undefined} undefined when no extension returned hooks
+ */
+Context.prototype.loadExtensions = function loadExtensions(element) {
+  const registered = this.environment.extensions;
+  if (!registered) return;
+  const extensions = new Extensions(element, this, Object.values(registered));
+  if (extensions.count) return extensions;
+};
+
+/**
  * Clone context, e.g. to evaluate with a new environment
  * @param {Environment} [newEnvironment]
  */
 Context.prototype.clone = function clone(newEnvironment) {
   return new this.constructor(this.definitions, newEnvironment || this.environment);
+};
+
+/**
+ * Extension hooks loaded for one element — factories that return nothing are
+ * mint-time decorators only and add no hooks
+ * @param {import('./drgElement/DrgElement.js').DrgElement} element
+ * @param {Context} context
+ * @param {import('#types').ExtensionFactory[]} factories
+ */
+export function Extensions(element, context, factories) {
+  /** @type {{ activate(message: any): void, deactivate(message: any): void }[]} */
+  const result = (this.extensions = []);
+  for (const factory of factories) {
+    const extension = factory(element, context);
+    if (!extension) continue;
+    if (typeof extension.activate !== 'function') extension.activate = noop;
+    if (typeof extension.deactivate !== 'function') extension.deactivate = noop;
+    result.push(/** @type {{ activate(message: any): void, deactivate(message: any): void }} */ (extension));
+  }
+}
+
+function noop() {}
+
+Object.defineProperty(Extensions.prototype, 'count', {
+  get() {
+    return this.extensions.length;
+  },
+});
+
+/** @param {any} executeMessage evaluation input, and the trace entry for traced elements */
+Extensions.prototype.activate = function activate(executeMessage) {
+  for (const extension of this.extensions) extension.activate(executeMessage);
+};
+
+/** @param {any} completeMessage the execute message with the evaluation `result`, or the `error` on failure */
+Extensions.prototype.deactivate = function deactivate(completeMessage) {
+  for (const extension of this.extensions) extension.deactivate(completeMessage);
 };

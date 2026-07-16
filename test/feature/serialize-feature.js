@@ -122,6 +122,37 @@ Feature('precompiled definitions', () => {
     });
   });
 
+  Scenario('vendor extension attributes survive serialization', () => {
+    /** @param {any} element */
+    function camundaVersionTag(element) {
+      const versionTag = element.behaviour.$attrs?.['camunda:versionTag'];
+      if (!versionTag) return;
+      return {
+        /** @param {any} executeMessage */
+        activate(executeMessage) {
+          if (executeMessage.trace) executeMessage.trace.versionTag = versionTag;
+        },
+      };
+    }
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition revived from serialized premium definitions, with a version tag extension', async () => {
+      definition = await revivedDefinition('premium.dmn', { extensions: { camunda: camundaVersionTag } });
+    });
+
+    /** @type {any} */
+    let traced;
+    When('the version-tagged premium decision is traced', async () => {
+      traced = await definition.trace('premium', { Age: 40, Coverage: 100000 });
+    });
+
+    Then('the extension read the camunda version tag from the revived tree', () => {
+      expect(traced.result).to.equal(3000);
+      expect(traced.trace.find((/** @type {any} */ entry) => entry.id === 'premium').versionTag).to.equal('1.0.1');
+    });
+  });
+
   Scenario('the serialized JSON is lean plain data', () => {
     /** @type {string} */
     let serialized;

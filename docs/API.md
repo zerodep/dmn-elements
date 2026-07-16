@@ -10,6 +10,7 @@ Runnable examples in this document are verified with [texample](https://www.npmj
   - [`definition.trace(decisionId[, input][, callback])`](#definitiontracedecisionid-input-callback)
   - [`definition.getDecisionById(decisionId)`](#definitiongetdecisionbyiddecisionid)
 - [Environment](#environment)
+- [Extensions](#extensions)
 - [Settings](#settings)
   - [`types`](#types)
   - [`validateResult`](#validateresult)
@@ -66,8 +67,57 @@ Returns the dmn-moddle decision definition, or `undefined`.
 | `expressions` | FEEL engine, feelin by default — a replacement must implement `resolveExpression(expression, context)` and `unaryTest(test, context)` |
 | `services`    | named host functions, available through `getServiceByName`                                                                            |
 | `output`      | shared output object                                                                                                                  |
-| `extensions`  | named extension functions                                                                                                             |
+| `extensions`  | named extension functions decorating elements beyond the DMN schema, see [Extensions](#extensions)                                    |
 | `Logger`      | logger factory `(scope) => ({ debug, error, warn })`, silent by default — see [Debug](../README.md#debug)                             |
+
+## Extensions
+
+The element behaviours only understand the DMN 1.3 schema, but models often carry more — vendor attributes like `camunda:versionTag`, or `extensionElements`. Extensions decorate elements with such semantics.
+
+An extension is a function `extension(element, context)`, registered by name on the environment `extensions` option. It is called once per DRG element, when the element is minted — read vendor attributes from `element.behaviour.$attrs` and extension elements from `element.behaviour.extensionElements`, and decorate the element as needed. Optionally return hooks that run around each evaluation:
+
+- `activate(executeMessage)`: runs before the element evaluates — `executeMessage.input` holds the evaluation input, and `executeMessage.trace` the element's [trace](#definitiontracedecisionid-input-callback) entry when the element is traced, open for annotation
+- `deactivate(completeMessage)`: runs when the evaluation completes — the execute message plus `result`, or `error` when the evaluation failed
+
+Return nothing to only decorate at mint time.
+
+```javascript
+import { DmnModdle } from 'dmn-moddle';
+import { Context, Definition, Environment } from 'dmn-elements';
+
+const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:camunda="http://camunda.org/schema/1.0/dmn" id="approvalDefinitions" name="Approval" namespace="https://example.com/dmn/approval">
+  <decision id="approval" name="Approval" camunda:versionTag="2.1.0">
+    <variable id="approvalVariable" name="Approval" typeRef="string" />
+    <literalExpression id="approvalExpression"><text>if Amount &lt; 1000 then "auto" else "manual"</text></literalExpression>
+  </decision>
+</definitions>`;
+
+const environment = new Environment({
+  extensions: {
+    versionTag(element, { environment }) {
+      const versionTag = element.behaviour.$attrs?.['camunda:versionTag'];
+      if (!versionTag) return;
+      return {
+        deactivate(completeMessage) {
+          environment.output[element.id] = { versionTag, result: completeMessage.result };
+        },
+      };
+    },
+  },
+});
+
+const { rootElement } = await new DmnModdle().fromXML(source);
+const definition = new Definition(new Context(rootElement, environment));
+
+console.log(await definition.evaluate('approval', { Amount: 250 }));
+// auto
+
+console.log(environment.output);
+// { approval: { versionTag: '2.1.0', result: 'auto' } }
+```
+
+Extensions read `$attrs` for vendor attributes unknown to dmn-moddle. To parse a vendor schema into first-class moddle properties instead, pass the vendor's moddle descriptor to `new DmnModdle({ camunda: ... })` — the extension then reads the typed properties off `element.behaviour`.
 
 ## Settings
 
@@ -203,7 +253,7 @@ console.log(await definition.evaluate('fee', { Level: 'platinum' }).catch((err) 
 
 ## Precompiled definitions
 
-`serializeDefinitions(definitions)` serializes parsed dmn-moddle definitions to lean JSON — moddle internals never serialize and diagram interchange is stripped. The engine reads only plain data, so the revived JSON evaluates like the source tree. Parse once at build time, ship the JSON, and evaluate without dmn-moddle in the runtime bundle:
+`serializeDefinitions(definitions)` serializes parsed dmn-moddle definitions to lean JSON — moddle internals never serialize and diagram interchange is stripped, while vendor extension attributes (`$attrs`) are kept so [extensions](#extensions) decorate revived trees like the source. The engine reads only plain data, so the revived JSON evaluates like the source tree. Parse once at build time, ship the JSON, and evaluate without dmn-moddle in the runtime bundle:
 
 ```javascript
 import { DmnModdle } from 'dmn-moddle';

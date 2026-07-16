@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="premiumDefinitions" name="Premium" namespace="https://example.com/dmn/premium">
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" xmlns:camunda="http://camunda.org/schema/1.0/dmn" id="premiumDefinitions" name="Premium" namespace="https://example.com/dmn/premium" exporter="Camunda Modeler" exporterVersion="5.48.0">
   <inputData id="ageInput" name="Age">
     <variable id="ageVariable" name="Age" typeRef="number" />
   </inputData>
@@ -16,7 +16,7 @@
       </literalExpression>
     </encapsulatedLogic>
   </businessKnowledgeModel>
-  <decision id="premium" name="Premium">
+  <decision id="premium" name="Premium" camunda:versionTag="1.0.1">
     <variable id="premiumVariable" name="Premium" typeRef="number" />
     <informationRequirement id="premiumRequiresAge">
       <requiredInput href="#ageInput" />

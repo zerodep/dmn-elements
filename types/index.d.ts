@@ -95,10 +95,39 @@ declare module 'dmn-elements' {
 		 * */
 		getElementById(id: string): DrgElement | undefined;
 		/**
+		 * Load registered environment extensions for a DRG element — runs when the element
+		 * is minted. Each extension factory is called with the element and this context and
+		 * may decorate the element; returned activate/deactivate hooks run around each
+		 * evaluation (see docs/API.md)
+		 * @returns undefined when no extension returned hooks
+		 */
+		loadExtensions(element: DrgElement): Extensions | undefined;
+		/**
 		 * Clone context, e.g. to evaluate with a new environment
 		 * 
 		 */
 		clone(newEnvironment?: Environment): any;
+	}
+	/**
+	 * Extension hooks loaded for one element — factories that return nothing are
+	 * mint-time decorators only and add no hooks
+	 * */
+	function Extensions(element: DrgElement, context: Context, factories: ExtensionFactory[]): void;
+	class Extensions {
+		/**
+		 * Extension hooks loaded for one element — factories that return nothing are
+		 * mint-time decorators only and add no hooks
+		 * */
+		constructor(element: DrgElement, context: Context, factories: ExtensionFactory[]);
+		extensions: {
+			activate(message: any): void;
+			deactivate(message: any): void;
+		}[];
+		get count(): number;
+		/** @param executeMessage evaluation input, and the trace entry for traced elements */
+		activate(executeMessage: any): void;
+		/** @param completeMessage the execute message with the evaluation `result`, or the `error` on failure */
+		deactivate(completeMessage: any): void;
 	}
 	/**
 	 * Shared evaluation environment: variables, services, settings, and the FEEL engine.
@@ -303,8 +332,11 @@ declare module 'dmn-elements' {
 		context: Context;
 		environment: Environment | undefined;
 		logger: ILogger;
+		/** @type {import('../Context.js').Extensions | undefined} extension hooks, when registered extensions returned any */
+		extensions: Extensions | undefined;
 		/**
-		 * Evaluate element — mints a Behaviour instance and executes it
+		 * Evaluate element — mints a Behaviour instance and executes it, running any
+		 * extension hooks around the execution
 		 * @param executeMessage requirements output and evaluation input
 		 * */
 		evaluate(executeMessage: any, callback: (err: Error | null, result?: any) => void): any;
@@ -344,10 +376,12 @@ declare module 'dmn-elements' {
 	 * The engine reads only plain enumerable data — `$type` strings, element
 	 * properties, and href references — so the revived JSON evaluates like the
 	 * source tree: `new Context(JSON.parse(serialized))`. Moddle internals
-	 * (`$parent`, `$attrs`, `$descriptor`) are non-enumerable or prototype-bound
-	 * and never serialize; diagram interchange (`dmnDI`) is stripped as runtime
-	 * dead weight. One-way: a revived tree evaluates, but cannot be written back
-	 * to DMN XML — that needs the moddle instances.
+	 * (`$parent`, `$descriptor`) are non-enumerable or prototype-bound and never
+	 * serialize; diagram interchange (`dmnDI`) is stripped as runtime dead weight.
+	 * Vendor extension attributes (`$attrs`, also non-enumerable) are kept when
+	 * present, so environment extensions decorate revived trees like the source.
+	 * One-way: a revived tree evaluates, but cannot be written back to DMN XML —
+	 * that needs the moddle instances.
 	 * @param definitions dmn-moddle definitions (root element from `DmnModdle#fromXML`)
 	 * @returns JSON
 	 */
@@ -392,9 +426,22 @@ declare module 'dmn-elements' {
 	warn(...args: any[]): void;
   }
 
+  interface IExtension {
+	/** runs before each evaluation of the element, with the execute message */
+	activate?(executeMessage: any): void;
+	/** runs after each evaluation completes, with the execute message plus `result` or `error` */
+	deactivate?(completeMessage: any): void;
+  }
+
+  /**
+   * Called when a DRG element is minted — decorate the element, and optionally
+   * return hooks that run around each evaluation
+   */
+  type ExtensionFactory = (element: any, context: any) => IExtension | void;
+
   interface EnvironmentOptions {
 	expressions?: IExpressions;
-	extensions?: Record<string, (element: any, context: any) => any>;
+	extensions?: Record<string, ExtensionFactory>;
 	Logger?: (scope: string) => ILogger;
 	output?: Record<string, any>;
 	services?: Record<string, (...args: any[]) => void>;

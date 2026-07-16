@@ -1,6 +1,6 @@
 # dmn-elements
 
-[![Build](https://github.com/zerodep/dmn-elements/actions/workflows/build.yaml/badge.svg)](https://github.com/zerodep/dmn-elements/actions/workflows/build.yaml)
+[![Build](https://github.com/zerodep/dmn-elements/actions/workflows/build.yaml/badge.svg)](https://github.com/zerodep/dmn-elements/actions/workflows/build.yaml)[![Coverage Status](https://coveralls.io/repos/github/zerodep/dmn-elements/badge.svg?branch=main)](https://coveralls.io/github/zerodep/dmn-elements?branch=main)
 
 Executable decision elements based on DMN 1.3.
 
@@ -13,7 +13,7 @@ Sibling of [bpmn-elements](https://github.com/paed01/bpmn-elements), sharing its
 
 ## Documentation
 
-- [API](docs/API.md) — `Definition` and environment settings
+- [API](docs/API.md) — `Definition`, environment settings, and extensions
 - [Examples](docs/Examples.md) — runnable examples
 
 ## Debug
@@ -63,6 +63,8 @@ All boxed expressions of DMN 1.3 evaluate: decision tables, literal expressions,
 
 The full per-case report lives in [scripts/tck/REPORT.md](scripts/tck/REPORT.md) — regenerate it with `npm run test:tck` (it tells you how to fetch the TCK test cases on first run).
 
-## Status
+# Ecosystem
 
-Pre-release. See AGENTS.md for architecture decisions.
+- [bpmn-elements](https://github.com/paed01/bpmn-elements) — isomorphic BPMN 2.0 execution elements, the sibling this project mirrors
+- [bpmn-engine](https://github.com/paed01/bpmn-engine) — BPMN 2.0 execution engine
+- [bpmn-middleware](https://github.com/zerodep/bpmn-middleware) — Express middleware exposing the engine over HTTP. Holds example to combine `dmn-elements` with BPMN execution engine

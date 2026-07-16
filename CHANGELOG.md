@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## v0.0.2 - 2026-07-16
+
+### Added
+
+- Extensions via the environment `extensions` option — named functions called per DRG element that decorate the model beyond the DMN schema, e.g. from vendor attributes, optionally hooking in around each evaluation
+- Serialized definitions keep vendor extension attributes (`$attrs`), so extensions decorate revived trees like the source
+
+## v0.0.1 - 2026-07-13
+
+First published release — DRG walking and every concrete DMN 1.3 boxed expression evaluate.
+
 ### Added
 
 - `dmn:Invocation` decision logic — boxed invocations bind parameters by name

@@ -16,14 +16,24 @@ export function DrgElement(Behaviour, elementDef, context) {
   this.context = context;
   this.environment = context.environment;
   this.logger = context.environment.Logger(this.type.toLowerCase());
+  /** @type {import('../Context.js').Extensions | undefined} extension hooks, when registered extensions returned any */
+  this.extensions = context.loadExtensions(this);
 }
 
 /**
- * Evaluate element — mints a Behaviour instance and executes it
+ * Evaluate element — mints a Behaviour instance and executes it, running any
+ * extension hooks around the execution
  * @param {any} executeMessage requirements output and evaluation input
  * @param {(err: Error | null, result?: any) => void} callback
  */
 DrgElement.prototype.evaluate = function evaluate(executeMessage, callback) {
   this.logger.debug(`<${this.id}> evaluate`);
-  return new this.Behaviour(this).execute(executeMessage, callback);
+  const extensions = this.extensions;
+  if (!extensions) return new this.Behaviour(this).execute(executeMessage, callback);
+
+  extensions.activate(executeMessage);
+  return new this.Behaviour(this).execute(executeMessage, (err, result) => {
+    extensions.deactivate({ ...executeMessage, ...(err ? { error: err } : { result }) });
+    return callback(err, result);
+  });
 };
