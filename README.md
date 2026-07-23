@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/zerodep/dmn-elements/actions/workflows/build.yaml/badge.svg)](https://github.com/zerodep/dmn-elements/actions/workflows/build.yaml)[![Coverage Status](https://coveralls.io/repos/github/zerodep/dmn-elements/badge.svg?branch=main)](https://coveralls.io/github/zerodep/dmn-elements?branch=main)
 
-Executable decision elements based on DMN 1.3.
+Executable decision elements based on DMN 1.3, including the DMN 1.4 boxed expressions (conditional, filter, for, some, every) through a shipped [dmn-moddle grammar extension](docs/API.md#dmn-14-boxed-expressions).
 
 Walks the decision requirement graph (DRG) and evaluates decisions — decision tables and literal expressions — standing on maintained upstream pieces:
 
@@ -56,10 +56,10 @@ dmn-elements:dmn:definitions <fee> completed
 Checked against the [DMN TCK](https://github.com/dmn-tck/tck) (July 2026):
 
 - **Compliance level 2: 100%** (126/126 assertions)
-- Compliance level 3: 84.3% (2840/3369)
-- Overall: 84.9% (2966/3495)
+- Compliance level 3: 84.7% (2852/3369)
+- Overall: 85.2% (2978/3495)
 
-All boxed expressions of DMN 1.3 evaluate: decision tables, literal expressions, contexts, invocations, relations, lists, and function definitions — plus decision services, business knowledge models, item definitions, and multi-model imports. The remaining gap is dominated by FEEL edge-case semantics owned by [feelin](https://github.com/nikku/feelin) (arithmetic corner cases, `instance of`, temporal functions) and DMN 1.4+ boxed expressions not yet in [dmn-moddle](https://github.com/bpmn-io/dmn-moddle)'s grammar.
+All boxed expressions of DMN 1.3 evaluate — decision tables, literal expressions, contexts, invocations, relations, lists, and function definitions — as do the DMN 1.4 additions (conditional, filter, for, some, every; their TCK cases pass in full), plus decision services, business knowledge models, item definitions, and multi-model imports. The remaining gap is dominated by FEEL edge-case semantics owned by [feelin](https://github.com/nikku/feelin) (arithmetic corner cases, `instance of`, temporal functions).
 
 The full per-case report lives in [scripts/tck/REPORT.md](scripts/tck/REPORT.md) — regenerate it with `npm run test:tck` (it tells you how to fetch the TCK test cases on first run).
 

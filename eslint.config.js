@@ -75,7 +75,8 @@ export default [
     languageOptions: {
       parserOptions: {
         sourceType: 'module',
-        ecmaVersion: 2022,
+        // 2025 for import attributes (JSON import in src/dmnModdle.js)
+        ecmaVersion: 2025,
       },
       globals: {
         ...globals['shared-node-browser'],

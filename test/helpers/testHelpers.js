@@ -4,15 +4,17 @@ import { DmnModdle } from 'dmn-moddle';
 import Debug from 'debug';
 
 import { Context, Environment } from 'dmn-elements';
+import { dmn, alignDmnNamespaces } from 'dmn-elements/dmn-moddle';
 
 /**
- * Parse DMN XML source with dmn-moddle
+ * Parse DMN XML source with dmn-moddle carrying the extended DMN package —
+ * the whole suite then proves the DMN 1.4 grammar additions are inert for 1.3 documents
  * @param {string | Buffer} source DMN XML
  * @returns {Promise<any>} dmn-moddle definitions
  */
 export async function moddleContext(source) {
-  const moddle = new DmnModdle();
-  const { rootElement } = await moddle.fromXML(source.toString());
+  const moddle = new DmnModdle({ dmn });
+  const { rootElement } = await moddle.fromXML(alignDmnNamespaces(source));
   return rootElement;
 }
 

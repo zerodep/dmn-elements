@@ -1,6 +1,10 @@
 import { DrgElement } from '../drgElement/DrgElement.js';
+import { BoxedConditional } from '../decisionLogic/BoxedConditional.js';
 import { BoxedContext } from '../decisionLogic/BoxedContext.js';
+import { BoxedFilter } from '../decisionLogic/BoxedFilter.js';
+import { BoxedFor } from '../decisionLogic/BoxedFor.js';
 import { BoxedList } from '../decisionLogic/BoxedList.js';
+import { BoxedSome, BoxedEvery } from '../decisionLogic/BoxedQuantified.js';
 import { DecisionTable } from '../decisionLogic/DecisionTable.js';
 import { FunctionDefinition } from '../decisionLogic/FunctionDefinition.js';
 import { Invocation } from '../decisionLogic/Invocation.js';
@@ -54,6 +58,16 @@ DecisionBehaviour.prototype.execute = function execute(executeMessage, callback)
       return new BoxedList(decisionLogic, this.element.context).execute(executeMessage, callback);
     case 'dmn:FunctionDefinition':
       return new FunctionDefinition(decisionLogic, this.element.context).execute(executeMessage, callback);
+    case 'dmn:Conditional':
+      return new BoxedConditional(decisionLogic, this.element.context).execute(executeMessage, callback);
+    case 'dmn:Filter':
+      return new BoxedFilter(decisionLogic, this.element.context).execute(executeMessage, callback);
+    case 'dmn:For':
+      return new BoxedFor(decisionLogic, this.element.context).execute(executeMessage, callback);
+    case 'dmn:Some':
+      return new BoxedSome(decisionLogic, this.element.context).execute(executeMessage, callback);
+    case 'dmn:Every':
+      return new BoxedEvery(decisionLogic, this.element.context).execute(executeMessage, callback);
     default:
       return callback(new DecisionError(`<${this.id}> unsupported decision logic ${decisionLogic.$type}`, this));
   }

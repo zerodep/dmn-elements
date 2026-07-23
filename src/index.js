@@ -5,8 +5,13 @@ export { Definition } from './definition/Definition.js';
 export { DrgElement } from './drgElement/DrgElement.js';
 export { Decision, DecisionBehaviour } from './decisions/index.js';
 export {
+  BoxedConditional,
   BoxedContext,
+  BoxedEvery,
+  BoxedFilter,
+  BoxedFor,
   BoxedList,
+  BoxedSome,
   DecisionTable,
   FunctionDefinition,
   Invocation,

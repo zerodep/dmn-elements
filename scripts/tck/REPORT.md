@@ -1,6 +1,6 @@
 # DMN TCK conformance sweep
 
-Assertions: 3495 — pass 2966 (84.9%), mismatch 328, error 201
+Assertions: 3495 — pass 2978 (85.2%), mismatch 316, error 201
 
 ## compliance-level-2: 126/126 (100.0%)
 
@@ -33,7 +33,7 @@ Assertions: 3495 — pass 2966 (84.9%), mismatch 328, error 201
 - PASS 0118-multi-priority-hitpolicy: 3/3
 - PASS 0119-multi-collect-hitpolicy: 3/3
 
-## compliance-level-3: 2840/3369 (84.3%)
+## compliance-level-3: 2852/3369 (84.7%)
 
 - PASS 0001-filter: 1/1
 - PASS 0002-string-functions: 4/4
@@ -145,18 +145,18 @@ Assertions: 3495 — pass 2966 (84.9%), mismatch 328, error 201
 - PASS 1147-feel-context-merge-function: 14/14
 - PARTIAL 1148-feel-now-function: 1/2 (evaluation-error)
 - PARTIAL 1149-feel-today-function: 1/2 (mismatch)
-- PARTIAL 1150-boxed-conditional: 1/3 (mismatch)
-- PARTIAL 1151-boxed-filter: 2/4 (mismatch)
-- FAIL 1152-boxed-for: 0/2 (mismatch)
-- PARTIAL 1153-boxed-some: 2/5 (mismatch)
-- PARTIAL 1154-boxed-every: 2/5 (mismatch)
+- PASS 1150-boxed-conditional: 3/3
+- PASS 1151-boxed-filter: 4/4
+- PASS 1152-boxed-for: 2/2
+- PASS 1153-boxed-some: 5/5
+- PASS 1154-boxed-every: 5/5
 - PARTIAL 1155-list-replace-function: 15/22 (mismatch)
 - PARTIAL 1156-range-function: 29/56 (mismatch, evaluation-error)
 - PASS 1161-boxed-list-expression: 2/2
 
 ## Failure categories
 
-### mismatch (328)
+### mismatch (316)
 
 - 0007-date-time#001:Date — expected {"fromString":{"$temporal":"date","text":"2015-12-24"},"fromDateTime":{"$tempora… got {"fromString":"2015-12-24T00:00:00.000Z","fromDateTime":"2016-12-25T00:00:00.000…
 - 0007-date-time#001:cOffset — expected {"$temporal":"duration","text":"-PT1H"} got null
@@ -170,7 +170,7 @@ Assertions: 3495 — pass 2966 (84.9%), mismatch 328, error 201
 - 0068-feel-equality#ym_duration_006:ym_duration_006 — expected null got true
 - 0068-feel-equality#range_006:range_006 — expected false got true
 - 0068-feel-equality#range_007:range_007 — expected false got true
-- … 316 more
+- … 304 more
 
 ### evaluation-error (201)
 

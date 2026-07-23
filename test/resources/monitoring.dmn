@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20230324/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20230324/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="monitoringDefinitions" name="Sensor monitoring" namespace="https://example.com/dmn/monitoring">
+  <itemDefinition id="tReadings" name="tReadings" isCollection="true">
+    <typeRef>number</typeRef>
+  </itemDefinition>
+  <inputData id="readingsInput" name="Readings">
+    <variable id="readingsVariable" name="Readings" typeRef="tReadings" />
+  </inputData>
+  <decision id="highReadings" name="High readings">
+    <variable id="highReadingsVariable" name="HighReadings" typeRef="tReadings" />
+    <informationRequirement id="highReadingsRequiresReadings">
+      <requiredInput href="#readingsInput" />
+    </informationRequirement>
+    <filter id="highReadingsFilter">
+      <in id="highReadingsIn">
+        <literalExpression id="highReadingsInExpression">
+          <text>Readings</text>
+        </literalExpression>
+      </in>
+      <match id="highReadingsMatch">
+        <literalExpression id="highReadingsMatchExpression">
+          <text>item &gt;= 100</text>
+        </literalExpression>
+      </match>
+    </filter>
+  </decision>
+  <decision id="calibrated" name="Calibrated readings">
+    <variable id="calibratedVariable" name="Calibrated" typeRef="tReadings" />
+    <informationRequirement id="calibratedRequiresReadings">
+      <requiredInput href="#readingsInput" />
+    </informationRequirement>
+    <for id="calibratedFor" iteratorVariable="reading">
+      <in id="calibratedIn">
+        <literalExpression id="calibratedInExpression">
+          <text>Readings</text>
+        </literalExpression>
+      </in>
+      <return id="calibratedReturn">
+        <literalExpression id="calibratedReturnExpression">
+          <text>reading - 2</text>
+        </literalExpression>
+      </return>
+    </for>
+  </decision>
+  <decision id="hasCritical" name="Has critical reading">
+    <variable id="hasCriticalVariable" name="HasCritical" typeRef="boolean" />
+    <informationRequirement id="hasCriticalRequiresReadings">
+      <requiredInput href="#readingsInput" />
+    </informationRequirement>
+    <some id="hasCriticalSome" iteratorVariable="reading">
+      <in id="hasCriticalIn">
+        <literalExpression id="hasCriticalInExpression">
+          <text>Readings</text>
+        </literalExpression>
+      </in>
+      <satisfies id="hasCriticalSatisfies">
+        <literalExpression id="hasCriticalSatisfiesExpression">
+          <text>reading &gt;= 200</text>
+        </literalExpression>
+      </satisfies>
+    </some>
+  </decision>
+  <decision id="allNominal" name="All readings nominal">
+    <variable id="allNominalVariable" name="AllNominal" typeRef="boolean" />
+    <informationRequirement id="allNominalRequiresReadings">
+      <requiredInput href="#readingsInput" />
+    </informationRequirement>
+    <every id="allNominalEvery" iteratorVariable="reading">
+      <in id="allNominalIn">
+        <literalExpression id="allNominalInExpression">
+          <text>Readings</text>
+        </literalExpression>
+      </in>
+      <satisfies id="allNominalSatisfies">
+        <literalExpression id="allNominalSatisfiesExpression">
+          <text>reading &lt; 200</text>
+        </literalExpression>
+      </satisfies>
+    </every>
+  </decision>
+  <decision id="status" name="Status">
+    <variable id="statusVariable" name="Status" typeRef="string" />
+    <informationRequirement id="statusRequiresHasCritical">
+      <requiredDecision href="#hasCritical" />
+    </informationRequirement>
+    <conditional id="statusConditional">
+      <if id="statusIf">
+        <literalExpression id="statusIfExpression">
+          <text>HasCritical</text>
+        </literalExpression>
+      </if>
+      <then id="statusThen">
+        <literalExpression id="statusThenExpression">
+          <text>"alert"</text>
+        </literalExpression>
+      </then>
+      <else id="statusElse">
+        <literalExpression id="statusElseExpression">
+          <text>"normal"</text>
+        </literalExpression>
+      </else>
+    </conditional>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="monitoringDiagram">
+      <dmndi:DMNShape id="statusShape" dmnElementRef="status">
+        <dc:Bounds height="80" width="180" x="500" y="40" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="highReadingsShape" dmnElementRef="highReadings">
+        <dc:Bounds height="80" width="180" x="60" y="180" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="calibratedShape" dmnElementRef="calibrated">
+        <dc:Bounds height="80" width="180" x="280" y="180" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="hasCriticalShape" dmnElementRef="hasCritical">
+        <dc:Bounds height="80" width="180" x="500" y="180" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="allNominalShape" dmnElementRef="allNominal">
+        <dc:Bounds height="80" width="180" x="720" y="180" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="readingsInputShape" dmnElementRef="readingsInput">
+        <dc:Bounds height="45" width="125" x="437" y="340" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="statusRequiresHasCriticalEdge" dmnElementRef="statusRequiresHasCritical">
+        <di:waypoint x="590" y="180" />
+        <di:waypoint x="590" y="120" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="highReadingsRequiresReadingsEdge" dmnElementRef="highReadingsRequiresReadings">
+        <di:waypoint x="437" y="362" />
+        <di:waypoint x="150" y="260" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="calibratedRequiresReadingsEdge" dmnElementRef="calibratedRequiresReadings">
+        <di:waypoint x="470" y="340" />
+        <di:waypoint x="370" y="260" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="hasCriticalRequiresReadingsEdge" dmnElementRef="hasCriticalRequiresReadings">
+        <di:waypoint x="500" y="340" />
+        <di:waypoint x="590" y="260" />
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="allNominalRequiresReadingsEdge" dmnElementRef="allNominalRequiresReadings">
+        <di:waypoint x="562" y="362" />
+        <di:waypoint x="810" y="260" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

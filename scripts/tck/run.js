@@ -7,6 +7,7 @@ import path from 'node:path';
 import { Parser } from 'saxen';
 import { DmnModdle } from 'dmn-moddle';
 import { Context, Definition, Environment, Expressions } from 'dmn-elements';
+import { dmn, alignDmnNamespaces } from 'dmn-elements/dmn-moddle';
 
 const TCK_ROOT = new URL('../../tmp/tck/TestCases', import.meta.url).pathname;
 const LEVELS = ['compliance-level-2', 'compliance-level-3'];
@@ -130,14 +131,6 @@ function matches(actual, expected) {
   return actual === expected;
 }
 
-function downgrade(source) {
-  return source
-    .replaceAll('https://www.omg.org/spec/DMN/20230324/MODEL/', 'https://www.omg.org/spec/DMN/20191111/MODEL/')
-    .replaceAll('https://www.omg.org/spec/DMN/20230324/DMNDI/', 'https://www.omg.org/spec/DMN/20191111/DMNDI/')
-    .replaceAll('https://www.omg.org/spec/DMN/20211108/MODEL/', 'https://www.omg.org/spec/DMN/20191111/MODEL/')
-    .replaceAll('https://www.omg.org/spec/DMN/20211108/DMNDI/', 'https://www.omg.org/spec/DMN/20191111/DMNDI/');
-}
-
 function categorize(message) {
   if (/failed to parse/.test(message)) return 'model-parse-error';
   if (/was not found in/.test(message)) return 'element-not-found';
@@ -174,7 +167,9 @@ for (const level of LEVELS) {
     let modelError;
     for (const modelFile of modelFiles) {
       try {
-        const { rootElement } = await new DmnModdle().fromXML(downgrade(fs.readFileSync(path.join(caseDir, modelFile), 'utf8')));
+        const { rootElement } = await new DmnModdle({ dmn }).fromXML(
+          alignDmnNamespaces(fs.readFileSync(path.join(caseDir, modelFile), 'utf8'))
+        );
         models.set(rootElement.namespace, { rootElement, file: modelFile });
       } catch (err) {
         modelError = `${modelFile}: ${err.message}`;

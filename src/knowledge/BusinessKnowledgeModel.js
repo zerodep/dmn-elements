@@ -1,6 +1,10 @@
 import { DrgElement } from '../drgElement/DrgElement.js';
+import { BoxedConditional } from '../decisionLogic/BoxedConditional.js';
 import { BoxedContext } from '../decisionLogic/BoxedContext.js';
+import { BoxedFilter } from '../decisionLogic/BoxedFilter.js';
+import { BoxedFor } from '../decisionLogic/BoxedFor.js';
 import { BoxedList } from '../decisionLogic/BoxedList.js';
+import { BoxedSome, BoxedEvery } from '../decisionLogic/BoxedQuantified.js';
 import { DecisionTable } from '../decisionLogic/DecisionTable.js';
 import { FunctionDefinition } from '../decisionLogic/FunctionDefinition.js';
 import { Invocation } from '../decisionLogic/Invocation.js';
@@ -66,6 +70,21 @@ BusinessKnowledgeModelBehaviour.prototype.execute = function execute(executeMess
       break;
     case 'dmn:FunctionDefinition':
       bodyLogic = new FunctionDefinition(logic.body, this.element.context);
+      break;
+    case 'dmn:Conditional':
+      bodyLogic = new BoxedConditional(logic.body, this.element.context);
+      break;
+    case 'dmn:Filter':
+      bodyLogic = new BoxedFilter(logic.body, this.element.context);
+      break;
+    case 'dmn:For':
+      bodyLogic = new BoxedFor(logic.body, this.element.context);
+      break;
+    case 'dmn:Some':
+      bodyLogic = new BoxedSome(logic.body, this.element.context);
+      break;
+    case 'dmn:Every':
+      bodyLogic = new BoxedEvery(logic.body, this.element.context);
       break;
     default:
       return callback(new DecisionError(`<${this.id}> unsupported encapsulated logic body ${logic.body?.$type}`, this));

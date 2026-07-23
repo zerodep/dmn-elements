@@ -70,6 +70,14 @@ Feature('precompiled definitions', () => {
     Then('the context entry function applied', () => {
       expect(result).to.equal(100);
     });
+
+    When('a revived DMN 1.4 conditional decision is evaluated', async () => {
+      result = await (await revivedDefinition('monitoring.dmn')).evaluate('status', { Readings: [95, 210] });
+    });
+
+    Then('the conditional walked its some-quantified requirement', () => {
+      expect(result).to.equal('alert');
+    });
   });
 
   Scenario('item definitions and imports round-trip', () => {

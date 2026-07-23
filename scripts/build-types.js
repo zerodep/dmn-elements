@@ -6,6 +6,7 @@ createBundle({
   modules: {
     'dmn-elements': 'src/index.js',
     'dmn-elements/errors': 'src/error/Errors.js',
+    'dmn-elements/dmn-moddle': 'src/dmnModdle.js',
   },
 }).catch((err) => {
   process.exitCode = 1;

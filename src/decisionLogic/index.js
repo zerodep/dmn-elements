@@ -1,5 +1,9 @@
+export { BoxedConditional } from './BoxedConditional.js';
 export { BoxedContext } from './BoxedContext.js';
+export { BoxedFilter } from './BoxedFilter.js';
+export { BoxedFor } from './BoxedFor.js';
 export { BoxedList } from './BoxedList.js';
+export { BoxedSome, BoxedEvery } from './BoxedQuantified.js';
 export { DecisionTable } from './DecisionTable.js';
 export { FunctionDefinition } from './FunctionDefinition.js';
 export { Invocation } from './Invocation.js';

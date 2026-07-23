@@ -16,6 +16,7 @@ Runnable examples in this document are verified with [texample](https://www.npmj
   - [`validateResult`](#validateresult)
   - [`resolveImport`](#resolveimport)
 - [Precompiled definitions](#precompiled-definitions)
+- [DMN 1.4 boxed expressions](#dmn-14-boxed-expressions)
 
 <!-- tocstop -->
 
@@ -285,3 +286,43 @@ console.log(await definition.evaluate('dish', { Season: 'Winter' }));
 ```
 
 The serialization is one-way: a revived tree evaluates, but cannot be written back to DMN XML — that needs the moddle instances.
+
+## DMN 1.4 boxed expressions
+
+dmn-moddle's grammar stops at DMN 1.3, which predates the conditional, filter, and iterator (for/some/every) boxed expressions introduced in DMN 1.4. The `dmn-elements/dmn-moddle` export closes that gap host-side:
+
+- `dmn` — dmn-moddle's DMN package extended with the DMN 1.4 boxed expression types. Pass it to `DmnModdle` to replace the built-in package: `new DmnModdle({ dmn })`.
+- `alignDmnNamespaces(source)` — rewrites DMN 1.4 (`20211108`) and 1.5 (`20230324`) namespace URIs in DMN XML to the DMN 1.3 URIs the package is registered under. The grammar additions are upward compatible, so an aligned document parses losslessly.
+
+The engine evaluates all five expressions wherever DMN 1.3 boxed expressions go — as decision logic, context entries, list elements, and function bodies. The `in` entry of a filter or iterator must evaluate to a list, a conditional's `if` and a filter/quantifier's `match`/`satisfies` must yield booleans — anything else raises a `DecisionError` (per the DMN TCK error cases). A filter's `match` scope carries the FEEL implicit variable `item` plus, for context elements, their entries; a for iteration's `return` scope carries the iterator variable and `partial`, the results so far.
+
+```javascript
+import { DmnModdle } from 'dmn-moddle';
+import { Context, Definition, Environment } from 'dmn-elements';
+import { dmn, alignDmnNamespaces } from 'dmn-elements/dmn-moddle';
+
+const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20230324/MODEL/" id="escalationDefinitions" name="Escalation" namespace="https://example.com/dmn/escalation">
+  <decision id="escalation" name="Escalation">
+    <variable id="escalationVariable" name="Escalation" typeRef="string" />
+    <conditional id="escalationConditional">
+      <if id="escalationIf">
+        <some id="escalationSome" iteratorVariable="ticket">
+          <in id="escalationIn"><literalExpression id="escalationInExpression"><text>Tickets</text></literalExpression></in>
+          <satisfies id="escalationSatisfies"><literalExpression id="escalationSatisfiesExpression"><text>ticket.priority = "high"</text></literalExpression></satisfies>
+        </some>
+      </if>
+      <then id="escalationThen"><literalExpression id="escalationThenExpression"><text>"page on-call"</text></literalExpression></then>
+      <else id="escalationElse"><literalExpression id="escalationElseExpression"><text>"next business day"</text></literalExpression></else>
+    </conditional>
+  </decision>
+</definitions>`;
+
+const { rootElement } = await new DmnModdle({ dmn }).fromXML(alignDmnNamespaces(source));
+const definition = new Definition(new Context(rootElement, new Environment()));
+
+console.log(await definition.evaluate('escalation', { Tickets: [{ id: 'T1', priority: 'high' }] }));
+// page on-call
+```
+
+The extended package parses DMN 1.3 documents unchanged — the whole test suite runs through it — so it can simply replace a stock `DmnModdle` where DMN 1.4+ models may show up. dmn-moddle stays a peer concern: the subpath is only useful alongside it (declared as an optional peer dependency), and the main `dmn-elements` entry never pulls it into a runtime bundle.

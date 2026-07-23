@@ -9,6 +9,13 @@ const source = `<?xml version="1.0" encoding="UTF-8"?>
   </inputData>
   <knowledgeSource id="policyManual" name="Policy manual" />
   <businessKnowledgeModel id="ageRules" name="Age rules" />
+  <businessKnowledgeModel id="doubler" name="Doubler">
+    <variable id="doublerVariable" name="Doubler" />
+    <encapsulatedLogic id="doublerLogic">
+      <formalParameter id="doublerN" name="n" />
+      <literalExpression id="doublerExpression"><text>n * 2</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
   <decision id="category" name="Category">
     <variable id="categoryVariable" name="Category" />
     <informationRequirement id="categoryRequiresAge">
@@ -65,6 +72,14 @@ describe('Context', () => {
           done();
         }
       );
+    });
+
+    it('a business knowledge model evaluates without execute message input to its invocable', (done) => {
+      /** @type {any} */ (context.getElementById('doubler')).evaluate({}, (/** @type {any} */ err, /** @type {any} */ invocable) => {
+        if (err) return done(err);
+        expect(invocable(3)).to.equal(6);
+        done();
+      });
     });
 
     it('a business knowledge model without logic errors on evaluate', (done) => {

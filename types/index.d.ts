@@ -535,6 +535,42 @@ declare module 'dmn-elements' {
 		_validatedCallback(callback: any): (err: any, result: any) => any;
 	}
 	/**
+	 * Boxed conditional evaluation — dmn:Conditional as decision logic (DMN 1.4).
+	 *
+	 * The if child expression must evaluate to a boolean — true selects the then
+	 * branch, false the else branch; only the selected branch evaluates.
+	 * @param conditionalDef dmn-moddle conditional definition
+	 * */
+	export function BoxedConditional(conditionalDef: any, context: Context): void;
+	export class BoxedConditional {
+		/**
+		 * Boxed conditional evaluation — dmn:Conditional as decision logic (DMN 1.4).
+		 *
+		 * The if child expression must evaluate to a boolean — true selects the then
+		 * branch, false the else branch; only the selected branch evaluates.
+		 * @param conditionalDef dmn-moddle conditional definition
+		 * */
+		constructor(conditionalDef: any, context: Context);
+		id: any;
+		type: any;
+		behaviour: any;
+		context: Context;
+		environment: Environment | undefined;
+		logger: ILogger;
+		/**
+		 * @param executeMessage evaluation input context
+		 * */
+		execute(executeMessage: {
+			input?: Record<string, any>;
+		}, callback: (err: Error | null, result?: any) => void): void;
+		/**
+		 * Evaluate synchronously, e.g. as encapsulated logic invoked from FEEL
+		 * @param input evaluation input context
+		 * @returns the selected branch result
+		 */
+		evaluate(input?: Record<string, any>): any;
+	}
+	/**
 	 * Boxed context evaluation — dmn:Context as decision logic.
 	 *
 	 * Entries evaluate in order, each named entry binding its value into scope for
@@ -573,6 +609,82 @@ declare module 'dmn-elements' {
 		evaluate(input?: Record<string, any>): any;
 		
 		_entryValue(entry: any, scope: any): any;
+	}
+	/**
+	 * Boxed filter evaluation — dmn:Filter as decision logic (DMN 1.4).
+	 *
+	 * The in child expression must evaluate to a list; the match expression
+	 * evaluates per element with the FEEL filter scope — the implicit variable
+	 * `item` and, for context elements, their entries — and must yield a boolean.
+	 * @param filterDef dmn-moddle filter definition
+	 * */
+	export function BoxedFilter(filterDef: any, context: Context): void;
+	export class BoxedFilter {
+		/**
+		 * Boxed filter evaluation — dmn:Filter as decision logic (DMN 1.4).
+		 *
+		 * The in child expression must evaluate to a list; the match expression
+		 * evaluates per element with the FEEL filter scope — the implicit variable
+		 * `item` and, for context elements, their entries — and must yield a boolean.
+		 * @param filterDef dmn-moddle filter definition
+		 * */
+		constructor(filterDef: any, context: Context);
+		id: any;
+		type: any;
+		behaviour: any;
+		context: Context;
+		environment: Environment | undefined;
+		logger: ILogger;
+		/**
+		 * @param executeMessage evaluation input context
+		 * */
+		execute(executeMessage: {
+			input?: Record<string, any>;
+		}, callback: (err: Error | null, result?: any) => void): void;
+		/**
+		 * Evaluate synchronously, e.g. as encapsulated logic invoked from FEEL
+		 * @param input evaluation input context
+		 * @returns the elements whose match evaluated to true
+		 */
+		evaluate(input?: Record<string, any>): any[];
+	}
+	/**
+	 * Boxed for iteration — dmn:For as decision logic (DMN 1.4).
+	 *
+	 * The in child expression must evaluate to a list; the return expression
+	 * evaluates per element with the iterator variable bound, plus the FEEL
+	 * iteration variable `partial` holding the results so far.
+	 * @param forDef dmn-moddle for definition
+	 * */
+	export function BoxedFor(forDef: any, context: Context): void;
+	export class BoxedFor {
+		/**
+		 * Boxed for iteration — dmn:For as decision logic (DMN 1.4).
+		 *
+		 * The in child expression must evaluate to a list; the return expression
+		 * evaluates per element with the iterator variable bound, plus the FEEL
+		 * iteration variable `partial` holding the results so far.
+		 * @param forDef dmn-moddle for definition
+		 * */
+		constructor(forDef: any, context: Context);
+		id: any;
+		type: any;
+		behaviour: any;
+		context: Context;
+		environment: Environment | undefined;
+		logger: ILogger;
+		/**
+		 * @param executeMessage evaluation input context
+		 * */
+		execute(executeMessage: {
+			input?: Record<string, any>;
+		}, callback: (err: Error | null, result?: any) => void): void;
+		/**
+		 * Evaluate synchronously, e.g. as encapsulated logic invoked from FEEL
+		 * @param input evaluation input context
+		 * @returns one return value per element
+		 */
+		evaluate(input?: Record<string, any>): any[];
 	}
 	/**
 	 * Boxed list evaluation — dmn:List as decision logic.
@@ -825,6 +937,26 @@ declare module 'dmn-elements' {
 		evaluate(input?: Record<string, any>): Record<string, any>[];
 	}
 	/**
+	 * @param someDef dmn-moddle some definition
+	 * */
+	export function BoxedSome(someDef: any, context: Context): void;
+	export class BoxedSome {
+		/**
+		 * @param someDef dmn-moddle some definition
+		 * */
+		constructor(someDef: any, context: Context);
+	}
+	/**
+	 * @param everyDef dmn-moddle every definition
+	 * */
+	export function BoxedEvery(everyDef: any, context: Context): void;
+	export class BoxedEvery {
+		/**
+		 * @param everyDef dmn-moddle every definition
+		 * */
+		constructor(everyDef: any, context: Context);
+	}
+	/**
 	 * DMN input data element — supplies a named input value from the evaluation input
 	 * @param inputDataDef dmn-moddle input data definition
 	 * */
@@ -974,6 +1106,34 @@ declare module 'dmn-elements/errors' {
 		}, inner?: Error);
 		inner: Error | undefined;
 	}
+
+	export {};
+}
+
+declare module 'dmn-elements/dmn-moddle' {
+	/**
+	 * Rewrite DMN 1.4/1.5 namespace URIs in DMN XML to the DMN 1.3 URIs the
+	 * extended package is registered under — the 1.4/1.5 grammar additions are
+	 * upward compatible, so an aligned document parses losslessly
+	 * @param source DMN XML
+	 * @returns DMN XML with aligned namespaces
+	 */
+	export function alignDmnNamespaces(source: string | {
+		toString(): string;
+	}): string;
+	/**
+	 * dmn-moddle's DMN 1.3 package extended with the DMN 1.4 boxed expressions.
+	 * Pass as the `dmn` package to DmnModdle to replace the built-in one:
+	 * `new DmnModdle({ dmn })`
+	 * */
+	export const dmn: ModdlePackage;
+	export type ModdlePackage = {
+		name: string;
+		prefix: string;
+		uri: string;
+		xml: Record<string, any>;
+		types: Record<string, any>[];
+	};
 
 	export {};
 }
