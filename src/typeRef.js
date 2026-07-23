@@ -119,13 +119,26 @@ function coerceItem(value, itemDef, element, chain) {
       throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to collection ${itemName(itemDef)}`, element);
     }
     // a fresh chain per element — like components, descending into the value makes recursion finite
-    return value.map((item) => (item === null || item === undefined ? item : coerceItemValue(item, itemDef, element, new Set())));
+    return validateTypeConstraint(
+      value.map((item) => (item === null || item === undefined ? item : coerceItemValue(item, itemDef, element, new Set()))),
+      itemDef,
+      element
+    );
   }
 
   // DMN singleton list conversion — a one-element list converts to its element for a non-collection type
   if (Array.isArray(value) && value.length === 1) value = value[0];
   if (value === null || value === undefined) return value;
-  return coerceItemValue(value, itemDef, element, chain);
+  return validateTypeConstraint(coerceItemValue(value, itemDef, element, chain), itemDef, element);
+}
+
+/** @internal DMN 1.5 type constraint — unary tests over the value as a whole, where allowed values constrain the element type */
+function validateTypeConstraint(value, itemDef, element) {
+  const constraint = itemDef.typeConstraint?.text;
+  if (constraint && !element.environment.unaryTest(constraint, { '?': value })) {
+    throw new DecisionError(`<${element.id}> value ${JSON.stringify(value)} violates type constraint of ${itemName(itemDef)}`, element);
+  }
+  return value;
 }
 
 /** @internal */

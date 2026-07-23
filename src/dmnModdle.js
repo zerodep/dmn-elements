@@ -64,14 +64,33 @@ const boxedExpressionTypes = [
 ];
 
 /**
- * dmn-moddle's DMN 1.3 package extended with the DMN 1.4 boxed expressions.
+ * DMN 1.5 addition — item definitions constrain their value as a whole with
+ * typeConstraint unary tests (allowedValues keeps constraining the element type),
+ * per the DMN 1.5 XSD sequence typeRef, allowedValues, typeConstraint
+ */
+const extendedTypes = dmn13.types.map((type) =>
+  type.name === 'ItemDefinition'
+    ? {
+        ...type,
+        properties: type.properties.flatMap((property) =>
+          property.name === 'allowedValues'
+            ? [property, { name: 'typeConstraint', type: 'UnaryTests', xml: { serialize: 'property' } }]
+            : [property]
+        ),
+      }
+    : type
+);
+
+/**
+ * dmn-moddle's DMN 1.3 package extended with the DMN 1.4 boxed expressions and
+ * the DMN 1.5 item definition typeConstraint.
  * Pass as the `dmn` package to DmnModdle to replace the built-in one:
  * `new DmnModdle({ dmn })`
  * @type {ModdlePackage}
  */
 export const dmn = {
   ...dmn13,
-  types: [...dmn13.types, ...boxedExpressionTypes],
+  types: [...extendedTypes, ...boxedExpressionTypes],
 };
 
 const namespaceRewrites = [

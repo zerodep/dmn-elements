@@ -7,6 +7,7 @@
 ### Added
 
 - DMN 1.4 boxed expressions evaluate: conditional, filter, and the iterators (for, some, every) — as decision logic, context entries, list elements, and function bodies. A filter match sees the implicit `item` variable and a context element's entries; a for return sees the iterator variable and `partial` (the results so far); non-conforming values (non-list `in`, non-boolean `if`/`match`/`satisfies`) raise `DecisionError`
+- DMN 1.5 item definition `typeConstraint` — unary tests validating the value as a whole (bound to `?`) wherever typeRefs coerce, while `allowedValues` keeps constraining the element type; a collection's elements answer to allowed values and the list itself to the type constraint. Violations raise `DecisionError`. The `dmn-elements/dmn-moddle` grammar carries the element
 - New `dmn-elements/dmn-moddle` export for host-side parsing: `dmn` — dmn-moddle's DMN package extended with the 1.4 boxed expression grammar (`new DmnModdle({ dmn })`) — and `alignDmnNamespaces(source)`, rewriting DMN 1.4/1.5 namespace URIs to the 1.3 URIs the package is registered under
 - dmn-moddle declared as an optional peer dependency — only needed with the `dmn-elements/dmn-moddle` subpath
 

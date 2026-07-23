@@ -2,6 +2,9 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20230324/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20230324/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="monitoringDefinitions" name="Sensor monitoring" namespace="https://example.com/dmn/monitoring">
   <itemDefinition id="tReadings" name="tReadings" isCollection="true">
     <typeRef>number</typeRef>
+    <typeConstraint id="tReadingsTypeConstraint">
+      <text>count(?) &lt;= 10</text>
+    </typeConstraint>
   </itemDefinition>
   <inputData id="readingsInput" name="Readings">
     <variable id="readingsVariable" name="Readings" typeRef="tReadings" />

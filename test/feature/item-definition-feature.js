@@ -158,6 +158,82 @@ Feature('item definition types', () => {
     });
   });
 
+  Scenario('item definitions with DMN 1.5 type constraints', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="rewardDefinitions" name="Reward" namespace="https://example.com/dmn/reward">
+  <itemDefinition id="tScores" name="tScores" isCollection="true">
+    <typeRef>number</typeRef>
+    <allowedValues id="tScoresAllowed"><text>[0..100]</text></allowedValues>
+    <typeConstraint id="tScoresConstraint"><text>count(?) &lt;= 3</text></typeConstraint>
+  </itemDefinition>
+  <itemDefinition id="tBonus" name="tBonus">
+    <typeRef>number</typeRef>
+    <typeConstraint id="tBonusConstraint"><text>&lt;= 50</text></typeConstraint>
+  </itemDefinition>
+  <inputData id="scoresInput" name="Scores">
+    <variable id="scoresVariable" name="Scores" typeRef="tScores" />
+  </inputData>
+  <inputData id="bonusInput" name="Bonus">
+    <variable id="bonusVariable" name="Bonus" typeRef="tBonus" />
+  </inputData>
+  <decision id="reward" name="Reward">
+    <variable id="rewardVariable" name="Reward" />
+    <informationRequirement id="rewardRequiresScores">
+      <requiredInput href="#scoresInput" />
+    </informationRequirement>
+    <informationRequirement id="rewardRequiresBonus">
+      <requiredInput href="#bonusInput" />
+    </informationRequirement>
+    <literalExpression id="rewardExpression"><text>sum(Scores) + Bonus</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source where a collection and a scalar item definition carry type constraints', async () => {
+      definition = await getDefinition(source);
+    });
+
+    /** @type {any} */
+    let result;
+    When('the reward is evaluated within all constraints', async () => {
+      result = await definition.evaluate('reward', { Scores: ['10', 20], Bonus: 30 });
+    });
+
+    Then('elements coerced and both type constraints passed', () => {
+      expect(result).to.equal(60);
+    });
+
+    /** @type {any} */
+    let error;
+    When('the reward is evaluated with too many scores', async () => {
+      error = await definition.evaluate('reward', { Scores: [1, 2, 3, 4], Bonus: 30 }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the collection type constraint violation', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/violates type constraint of tScores/);
+    });
+
+    When('the reward is evaluated with a score outside the allowed values', async () => {
+      error = await definition.evaluate('reward', { Scores: [10, 200], Bonus: 30 }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the allowed values violation of the element type', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/violates allowed values of tScores/);
+    });
+
+    When('the reward is evaluated with a too large bonus', async () => {
+      error = await definition.evaluate('reward', { Scores: [10], Bonus: 60 }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the scalar type constraint violation', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/violates type constraint of tBonus/);
+    });
+  });
+
   Scenario('a collection of a named item definition type', () => {
     const source = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="pointsDefinitions" name="Points" namespace="https://example.com/dmn/points">

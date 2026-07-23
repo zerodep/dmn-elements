@@ -172,7 +172,7 @@ console.log(await definition.evaluate('grade', { Score: '85 pts' }));
 
 ### `validateResult`
 
-Off by default. When true, every decision result is coerced and validated against the decision variable's typeRef before the decision completes — a result outside an item definition's allowed values fails the evaluation instead of flowing downstream.
+Off by default. When true, every decision result is coerced and validated against the decision variable's typeRef before the decision completes — a result outside an item definition's allowed values, or violating its DMN 1.5 `typeConstraint`, fails the evaluation instead of flowing downstream.
 
 ```javascript
 import { DmnModdle } from 'dmn-moddle';
@@ -289,12 +289,14 @@ The serialization is one-way: a revived tree evaluates, but cannot be written ba
 
 ## DMN 1.4 boxed expressions
 
-dmn-moddle's grammar stops at DMN 1.3, which predates the conditional, filter, and iterator (for/some/every) boxed expressions introduced in DMN 1.4. The `dmn-elements/dmn-moddle` export closes that gap host-side:
+dmn-moddle's grammar stops at DMN 1.3, which predates the conditional, filter, and iterator (for/some/every) boxed expressions introduced in DMN 1.4, and the item definition `typeConstraint` introduced in DMN 1.5. The `dmn-elements/dmn-moddle` export closes that gap host-side:
 
-- `dmn` — dmn-moddle's DMN package extended with the DMN 1.4 boxed expression types. Pass it to `DmnModdle` to replace the built-in package: `new DmnModdle({ dmn })`.
+- `dmn` — dmn-moddle's DMN package extended with the DMN 1.4 boxed expression types and the DMN 1.5 item definition `typeConstraint`. Pass it to `DmnModdle` to replace the built-in package: `new DmnModdle({ dmn })`.
 - `alignDmnNamespaces(source)` — rewrites DMN 1.4 (`20211108`) and 1.5 (`20230324`) namespace URIs in DMN XML to the DMN 1.3 URIs the package is registered under. The grammar additions are upward compatible, so an aligned document parses losslessly.
 
 The engine evaluates all five expressions wherever DMN 1.3 boxed expressions go — as decision logic, context entries, list elements, and function bodies. The `in` entry of a filter or iterator must evaluate to a list, a conditional's `if` and a filter/quantifier's `match`/`satisfies` must yield booleans — anything else raises a `DecisionError` (per the DMN TCK error cases). A filter's `match` scope carries the FEEL implicit variable `item` plus, for context elements, their entries; a for iteration's `return` scope carries the iterator variable and `partial`, the results so far.
+
+An item definition's `typeConstraint` validates like `allowedValues`, wherever typeRefs coerce: the unary tests apply to the value as a whole (bound to `?`), while `allowedValues` constrains the element type — so a collection's elements answer to `allowedValues` and the list itself to `typeConstraint`, e.g. `count(?) <= 10`. A violation raises a `DecisionError`.
 
 ```javascript
 import { DmnModdle } from 'dmn-moddle';

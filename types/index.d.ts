@@ -1122,7 +1122,8 @@ declare module 'dmn-elements/dmn-moddle' {
 		toString(): string;
 	}): string;
 	/**
-	 * dmn-moddle's DMN 1.3 package extended with the DMN 1.4 boxed expressions.
+	 * dmn-moddle's DMN 1.3 package extended with the DMN 1.4 boxed expressions and
+	 * the DMN 1.5 item definition typeConstraint.
 	 * Pass as the `dmn` package to DmnModdle to replace the built-in one:
 	 * `new DmnModdle({ dmn })`
 	 * */
