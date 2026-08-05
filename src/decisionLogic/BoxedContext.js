@@ -12,7 +12,9 @@ import { expressionValue } from './expressionValue.js';
  * @param {import('../Context.js').Context} context
  */
 export function BoxedContext(contextDef, context) {
+  /** @type {string | undefined} */
   this.id = contextDef.id;
+  /** @type {string} */
   this.type = contextDef.$type;
   this.behaviour = contextDef;
   this.context = context;

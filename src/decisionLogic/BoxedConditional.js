@@ -10,7 +10,9 @@ import { childExpressionValue } from './expressionValue.js';
  * @param {import('../Context.js').Context} context
  */
 export function BoxedConditional(conditionalDef, context) {
+  /** @type {string | undefined} */
   this.id = conditionalDef.id;
+  /** @type {string} */
   this.type = conditionalDef.$type;
   this.behaviour = conditionalDef;
   this.context = context;

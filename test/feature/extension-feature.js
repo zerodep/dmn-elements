@@ -1,4 +1,3 @@
-// @ts-check
 import * as testHelpers from '../helpers/testHelpers.js';
 import { decisionTableSource } from '../helpers/factory.js';
 import { Definition, DecisionError } from 'dmn-elements';

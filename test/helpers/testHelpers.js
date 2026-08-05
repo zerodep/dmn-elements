@@ -1,4 +1,3 @@
-// @ts-check
 import fs from 'node:fs';
 import { DmnModdle } from 'dmn-moddle';
 import Debug from 'debug';

@@ -6,7 +6,9 @@ import { DmnError, DecisionError } from '../error/Errors.js';
  * @param {import('../Context.js').Context} context
  */
 export function LiteralExpression(literalExpressionDef, context) {
+  /** @type {string | undefined} */
   this.id = literalExpressionDef.id;
+  /** @type {string} */
   this.type = literalExpressionDef.$type;
   this.behaviour = literalExpressionDef;
   this.context = context;

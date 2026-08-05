@@ -1,4 +1,3 @@
-// @ts-check
 import * as testHelpers from '../helpers/testHelpers.js';
 import { Context, Definition, DecisionError, Environment, serializeDefinitions } from 'dmn-elements';
 

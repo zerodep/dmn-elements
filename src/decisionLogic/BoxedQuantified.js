@@ -13,7 +13,9 @@ import { childExpressionValue } from './expressionValue.js';
  * @param {import('../Context.js').Context} context
  */
 function BoxedQuantified(quantifiedDef, context) {
+  /** @type {string | undefined} */
   this.id = quantifiedDef.id;
+  /** @type {string} */
   this.type = quantifiedDef.$type;
   this.behaviour = quantifiedDef;
   this.context = context;

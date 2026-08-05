@@ -1,4 +1,3 @@
-// @ts-check
 import { Context, Environment, InformationRequirement, KnowledgeRequirement, AuthorityRequirement } from 'dmn-elements';
 import * as testHelpers from './helpers/testHelpers.js';
 

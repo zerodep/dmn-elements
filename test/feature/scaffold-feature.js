@@ -1,4 +1,3 @@
-// @ts-check
 import * as testHelpers from '../helpers/testHelpers.js';
 import { Environment } from 'dmn-elements';
 

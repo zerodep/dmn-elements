@@ -1,4 +1,3 @@
-// @ts-check
 import { coerceTypeRef, Environment, DecisionError } from 'dmn-elements';
 
 describe('coerceTypeRef(value, typeRef, element)', () => {

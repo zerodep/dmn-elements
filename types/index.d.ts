@@ -21,9 +21,12 @@ declare module 'dmn-elements' {
 		 */
 		constructor(definitions: any, environment?: Environment);
 		definitions: any;
-		id: any;
-		name: any;
-		type: any;
+		
+		id: string;
+		
+		name: string;
+		
+		type: string;
 		environment: Environment | undefined;
 		/**
 		 * All DRG elements: decisions, input data, business knowledge models, and knowledge sources
@@ -242,9 +245,12 @@ declare module 'dmn-elements' {
 		environment: Environment;
 		
 		context: Context;
-		id: any;
-		name: any;
-		type: any;
+		
+		id: string;
+		
+		name: string;
+		
+		type: string;
 		/**
 		 * Evaluate a decision and, recursively, its required decisions.
 		 *
@@ -324,9 +330,12 @@ declare module 'dmn-elements' {
 		 * @param elementDef dmn-moddle element definition
 		 * */
 		constructor(Behaviour: Function, elementDef: any, context: Context);
-		id: any;
-		type: any;
-		name: any;
+		
+		id: string;
+		
+		type: string;
+		
+		name: string;
 		behaviour: any;
 		Behaviour: Function;
 		context: Context;
@@ -526,8 +535,8 @@ declare module 'dmn-elements' {
 	export class DecisionBehaviour {
 		
 		constructor(element: DrgElement);
-		id: any;
-		type: any;
+		id: string;
+		type: string;
 		element: DrgElement;
 		decisionLogic: any;
 		execute(executeMessage: any, callback: any): any;
@@ -551,8 +560,10 @@ declare module 'dmn-elements' {
 		 * @param conditionalDef dmn-moddle conditional definition
 		 * */
 		constructor(conditionalDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string | undefined;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		environment: Environment | undefined;
@@ -589,8 +600,10 @@ declare module 'dmn-elements' {
 		 * @param contextDef dmn-moddle context definition
 		 * */
 		constructor(contextDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string | undefined;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		environment: Environment | undefined;
@@ -629,8 +642,10 @@ declare module 'dmn-elements' {
 		 * @param filterDef dmn-moddle filter definition
 		 * */
 		constructor(filterDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string | undefined;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		environment: Environment | undefined;
@@ -667,8 +682,10 @@ declare module 'dmn-elements' {
 		 * @param forDef dmn-moddle for definition
 		 * */
 		constructor(forDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string | undefined;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		environment: Environment | undefined;
@@ -703,8 +720,10 @@ declare module 'dmn-elements' {
 		 * @param listDef dmn-moddle list definition
 		 * */
 		constructor(listDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string | undefined;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		environment: Environment | undefined;
@@ -741,8 +760,10 @@ declare module 'dmn-elements' {
 		 * @param decisionTableDef dmn-moddle decision table definition
 		 * */
 		constructor(decisionTableDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string | undefined;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		environment: Environment | undefined;
@@ -805,8 +826,10 @@ declare module 'dmn-elements' {
 		 * @param functionDef dmn-moddle function definition
 		 * */
 		constructor(functionDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string | undefined;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		environment: Environment | undefined;
@@ -845,8 +868,10 @@ declare module 'dmn-elements' {
 		 * @param invocationDef dmn-moddle invocation definition
 		 * */
 		constructor(invocationDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string | undefined;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		environment: Environment | undefined;
@@ -877,8 +902,10 @@ declare module 'dmn-elements' {
 		 * @param literalExpressionDef dmn-moddle literal expression definition
 		 * */
 		constructor(literalExpressionDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string | undefined;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		environment: Environment | undefined;
@@ -917,8 +944,10 @@ declare module 'dmn-elements' {
 		 * @param relationDef dmn-moddle relation definition
 		 * */
 		constructor(relationDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string | undefined;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		environment: Environment | undefined;
@@ -966,8 +995,8 @@ declare module 'dmn-elements' {
 	export class InputDataBehaviour {
 		
 		constructor(element: DrgElement);
-		id: any;
-		type: any;
+		id: string;
+		type: string;
 		element: DrgElement;
 		variable: any;
 		execute(executeMessage: any, callback: any): any;
@@ -984,8 +1013,8 @@ declare module 'dmn-elements' {
 	export class BusinessKnowledgeModelBehaviour {
 		
 		constructor(element: DrgElement);
-		id: any;
-		type: any;
+		id: string;
+		type: string;
 		element: DrgElement;
 		encapsulatedLogic: any;
 		/**
@@ -1010,8 +1039,8 @@ declare module 'dmn-elements' {
 	export class KnowledgeSourceBehaviour {
 		
 		constructor(element: DrgElement);
-		id: any;
-		type: any;
+		id: string;
+		type: string;
 		element: DrgElement;
 		execute(executeMessage: any, callback: any): any;
 	}
@@ -1028,8 +1057,10 @@ declare module 'dmn-elements' {
 		 * @param requirementDef dmn-moddle information requirement definition
 		 * */
 		constructor(requirementDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		required: any;
@@ -1047,8 +1078,10 @@ declare module 'dmn-elements' {
 		 * @param requirementDef dmn-moddle knowledge requirement definition
 		 * */
 		constructor(requirementDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		required: any;
@@ -1066,8 +1099,10 @@ declare module 'dmn-elements' {
 		 * @param requirementDef dmn-moddle authority requirement definition
 		 * */
 		constructor(requirementDef: any, context: Context);
-		id: any;
-		type: any;
+		
+		id: string;
+		
+		type: string;
 		behaviour: any;
 		context: Context;
 		required: any;

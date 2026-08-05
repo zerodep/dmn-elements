@@ -13,7 +13,9 @@ import { expressionValue } from './expressionValue.js';
  * @param {import('../Context.js').Context} context
  */
 export function FunctionDefinition(functionDef, context) {
+  /** @type {string | undefined} */
   this.id = functionDef.id;
+  /** @type {string} */
   this.type = functionDef.$type;
   this.behaviour = functionDef;
   this.context = context;

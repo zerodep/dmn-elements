@@ -12,7 +12,9 @@ import { expressionValue } from './expressionValue.js';
  * @param {import('../Context.js').Context} context
  */
 export function Invocation(invocationDef, context) {
+  /** @type {string | undefined} */
   this.id = invocationDef.id;
+  /** @type {string} */
   this.type = invocationDef.$type;
   this.behaviour = invocationDef;
   this.context = context;

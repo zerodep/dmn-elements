@@ -1,4 +1,3 @@
-// @ts-check
 import { Environment, Expressions } from 'dmn-elements';
 
 describe('Environment', () => {

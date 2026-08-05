@@ -11,7 +11,9 @@ import { coerceTypeRef } from '../typeRef.js';
  * @param {import('../Context.js').Context} context
  */
 export function DecisionTable(decisionTableDef, context) {
+  /** @type {string | undefined} */
   this.id = decisionTableDef.id;
+  /** @type {string} */
   this.type = decisionTableDef.$type;
   this.behaviour = decisionTableDef;
   this.context = context;

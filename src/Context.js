@@ -27,8 +27,11 @@ export function Context(definitions, environment) {
   if (!(this instanceof Context)) return new Context(definitions, environment);
 
   this.definitions = definitions;
+  /** @type {string} */
   this.id = definitions.id;
+  /** @type {string} */
   this.name = definitions.name;
+  /** @type {string} */
   this.type = definitions.$type;
   this.environment = environment || new Environment();
   /** @internal minted element instances keyed by id */

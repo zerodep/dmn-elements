@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v0.0.4 - 2026-08-05
+
+### Changed
+
+- `id`, `name`, and `type` are typed as strings in the published type declarations (were `any`)
+
 ## v0.0.3 - 2026-07-23
 
 ### Added

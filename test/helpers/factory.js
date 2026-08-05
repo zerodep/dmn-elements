@@ -1,4 +1,3 @@
-// @ts-check
 /**
  * DMN XML source builders for tests.
  *

@@ -5,7 +5,9 @@
  * @param {import('../Context.js').Context} context
  */
 export function KnowledgeRequirement(requirementDef, context) {
+  /** @type {string} */
   this.id = requirementDef.id;
+  /** @type {string} */
   this.type = requirementDef.$type;
   this.behaviour = requirementDef;
   this.context = context;

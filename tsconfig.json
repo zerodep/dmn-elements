@@ -1,11 +1,10 @@
 {
-  "include": ["src/**/*", "test/**/*", "types"],
+  "include": ["src/**/*", "types"],
   "compilerOptions": {
     "emitDeclarationOnly": true,
     "sourceMap": false,
     "lib": ["es2020"],
     "target": "es2020",
-    "outDir": "./tmp/ignore",
     "declaration": true,
     "noEmitOnError": true,
     "noErrorTruncation": true,
@@ -20,7 +19,7 @@
     "noImplicitThis": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "types": ["node", "chai", "mocha"],
+    "types": ["node"],
     "paths": {
       "#types": ["./types/interfaces.d.ts"]
     }

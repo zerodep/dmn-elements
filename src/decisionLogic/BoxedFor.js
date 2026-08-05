@@ -11,7 +11,9 @@ import { childExpressionValue } from './expressionValue.js';
  * @param {import('../Context.js').Context} context
  */
 export function BoxedFor(forDef, context) {
+  /** @type {string | undefined} */
   this.id = forDef.id;
+  /** @type {string} */
   this.type = forDef.$type;
   this.behaviour = forDef;
   this.context = context;

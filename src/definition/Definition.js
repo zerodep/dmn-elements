@@ -14,8 +14,11 @@ export function Definition(context, options) {
   /** @type {import('../Context.js').Context} */
   this.context = options ? context.clone(this.environment) : context;
 
+  /** @type {string} */
   this.id = context.id;
+  /** @type {string} */
   this.name = context.name;
+  /** @type {string} */
   this.type = context.type;
 }
 

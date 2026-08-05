@@ -8,8 +8,11 @@
  * @param {import('../Context.js').Context} context
  */
 export function DrgElement(Behaviour, elementDef, context) {
+  /** @type {string} */
   this.id = elementDef.id;
+  /** @type {string} */
   this.type = elementDef.$type;
+  /** @type {string} */
   this.name = elementDef.name;
   this.behaviour = elementDef;
   this.Behaviour = Behaviour;
