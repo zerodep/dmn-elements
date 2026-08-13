@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## v0.0.5 - 2026-08-13
+
+### Changed
+
+- type declarations are generated with dts-buddy
+
+### Fixed
+
+- stray `@type` import path in the published `DrgElement.extensions` declaration comment
+
 ## v0.0.4 - 2026-08-05
 
 ### Changed

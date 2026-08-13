@@ -19,7 +19,10 @@ export function DrgElement(Behaviour, elementDef, context) {
   this.context = context;
   this.environment = context.environment;
   this.logger = context.environment.Logger(this.type.toLowerCase());
-  /** @type {import('../Context.js').Extensions | undefined} extension hooks, when registered extensions returned any */
+  /**
+   * Extension hooks, when registered extensions returned any
+   * @type {import('../Context.js').Extensions | undefined}
+   */
   this.extensions = context.loadExtensions(this);
 }
 

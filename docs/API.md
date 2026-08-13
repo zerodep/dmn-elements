@@ -49,6 +49,8 @@ Returns the bare decision result: a single decision table output yields the valu
 
 Evaluation is stateless: every call is a fresh run, nothing survives between calls.
 
+The built-in behaviours all complete synchronously — DMN has no waiting semantics. The callback shape is kept anyway because each element boundary is a pluggable seam: a custom behaviour or extension may call back asynchronously (fetch input data, invoke a service), imports load through the async `resolveImport` setting before the run starts, and errors channel uniformly through the callback chain — mirroring the bpmn-elements execution contract.
+
 ### `definition.trace(decisionId[, input][, callback])`
 
 Evaluate like [`evaluate`](#definitionevaluatedecisionid-input-callback), resolving with `{ result, trace }` — the evaluated elements in completion order (dependencies before dependents), each with its requirement bindings, and hit policy resolution for decision tables. See the [trace example](Examples.md#trace-an-evaluation).

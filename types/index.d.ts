@@ -341,7 +341,9 @@ declare module 'dmn-elements' {
 		context: Context;
 		environment: Environment | undefined;
 		logger: ILogger;
-		/** @type {import('../Context.js').Extensions | undefined} extension hooks, when registered extensions returned any */
+		/**
+		 * Extension hooks, when registered extensions returned any
+		 * */
 		extensions: Extensions | undefined;
 		/**
 		 * Evaluate element — mints a Behaviour instance and executes it, running any
