@@ -204,9 +204,11 @@ declare module 'dmn-elements' {
 		 */
 		unaryTest(test: string, context?: Record<string, any>): boolean;
 		[kServices]: Record<string, (...args: any[]) => any>;
+		[kGuardedServices]: Record<string, Function>;
 		[kVariables]: Record<string, any>;
 	}
 	const kServices: unique symbol;
+	const kGuardedServices: unique symbol;
 	const kVariables: unique symbol;
 	/**
 	 * FEEL expression engine backed by feelin.

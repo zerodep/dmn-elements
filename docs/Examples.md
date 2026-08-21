@@ -119,6 +119,55 @@ console.log(await strictDefinition.evaluate('access', { Age: 20 }));
 // denied
 ```
 
+## Call a service
+
+Environment services are named host functions, exposed to FEEL under `services`. They must be synchronous — a service returning a promise fails the evaluation with a `DecisionError`:
+
+```javascript
+import { DmnModdle } from 'dmn-moddle';
+import { Context, Definition, Environment } from 'dmn-elements';
+
+const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="screeningDefinitions" name="Screening" namespace="https://example.com/dmn/screening">
+  <inputData id="applicantInput" name="Applicant">
+    <variable id="applicantVariable" name="Applicant" />
+  </inputData>
+  <decision id="screening" name="Screening">
+    <variable id="screeningVariable" name="Screening" typeRef="string" />
+    <informationRequirement id="screeningRequiresApplicant">
+      <requiredInput href="#applicantInput" />
+    </informationRequirement>
+    <decisionTable id="screeningTable">
+      <input id="screeningInput">
+        <inputExpression id="screeningInputExpression" typeRef="number"><text>services.creditScore(Applicant)</text></inputExpression>
+      </input>
+      <output id="screeningOutput" name="screening" typeRef="string" />
+      <rule id="approvedRule">
+        <inputEntry id="approvedEntry"><text>&gt;= 600</text></inputEntry>
+        <outputEntry id="approvedOutcome"><text>"approved"</text></outputEntry>
+      </rule>
+      <rule id="reviewRule">
+        <inputEntry id="reviewEntry"><text>&lt; 600</text></inputEntry>
+        <outputEntry id="reviewOutcome"><text>"review"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>`;
+
+const { rootElement } = await new DmnModdle().fromXML(source);
+const environment = new Environment({
+  services: {
+    creditScore(applicant) {
+      return applicant.income >= 4000 ? 700 : 500;
+    },
+  },
+});
+const definition = new Definition(new Context(rootElement, environment));
+
+console.log(await definition.evaluate('screening', { Applicant: { income: 5000 } }));
+// approved
+```
+
 ## Trace an evaluation
 
 `trace` evaluates like `evaluate` but resolves with the result and the evaluation trace — evaluated elements in completion order, with requirement bindings and, for decision tables, hit policy and matched rules:

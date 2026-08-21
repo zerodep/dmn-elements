@@ -10,6 +10,8 @@
 
 - Environment `services` are exposed to FEEL under `services` — named host functions callable from any expression or unary test, e.g. `services.creditScore(Applicant)`; a variable or evaluation input named `services` shadows the overlay
 - A service function that throws fails the evaluation with a `DecisionError` carrying the service error message and the original error as `cause`
+- A service function that returns a promise fails the evaluation with a pointed `DecisionError` naming the service — FEEL evaluation is synchronous, so a leaked promise would silently corrupt the result instead of erroring
+- Reading an unregistered service name from FEEL logs a warning through the environment `Logger` (scope `environment`, once per name) — the invocation itself still yields null per FEEL semantics
 
 ## v0.0.5 - 2026-08-13
 

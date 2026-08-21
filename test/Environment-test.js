@@ -1,4 +1,4 @@
-import { Environment, Expressions } from 'dmn-elements';
+import { Environment, Expressions, DecisionError } from 'dmn-elements';
 
 describe('Environment', () => {
   describe('ctor', () => {
@@ -127,6 +127,37 @@ describe('Environment', () => {
       const environment = new Environment({ services: { minimum: () => 3 } });
       expect(environment.unaryTest('>= services.minimum()', { '?': 5 })).to.be.true;
       expect(environment.unaryTest('>= services.minimum()', { '?': 2 })).to.be.false;
+    });
+
+    it('a service returning a promise throws a DecisionError from resolveExpression', () => {
+      const environment = new Environment({ services: { fetchScore: () => Promise.resolve(700) } });
+      expect(() => environment.resolveExpression('services.fetchScore()')).to.throw(DecisionError, /fetchScore.*synchronous/);
+    });
+
+    it('a service returning a promise throws a DecisionError from unaryTest', () => {
+      const environment = new Environment({ services: { minimum: () => Promise.resolve(3) } });
+      expect(() => environment.unaryTest('>= services.minimum()', { '?': 5 })).to.throw(DecisionError, /minimum.*synchronous/);
+    });
+
+    it('getServiceByName returns the unguarded function', () => {
+      const fetchScore = () => Promise.resolve(700);
+      const environment = new Environment({ services: { fetchScore } });
+      expect(environment.getServiceByName('fetchScore')).to.equal(fetchScore);
+      expect(environment.services.fetchScore, 'services property').to.equal(fetchScore);
+    });
+
+    it('an async service stays callable outside FEEL', async () => {
+      const environment = new Environment({
+        services: {
+          async fetchScore(/** @type {number} */ income) {
+            return await Promise.resolve(income >= 4000 ? 700 : 500);
+          },
+        },
+      });
+
+      expect(await /** @type {Function} */ (environment.getServiceByName('fetchScore'))(5000)).to.equal(700);
+      expect(await environment.services.fetchScore(1000), 'services property').to.equal(500);
+      expect(await /** @type {Function} */ (environment.clone().getServiceByName('fetchScore'))(5000), 'cloned environment').to.equal(700);
     });
 
     it('a variable named services shadows the services overlay', () => {

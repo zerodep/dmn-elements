@@ -148,7 +148,6 @@ Feature('FEEL seam', () => {
     });
 
     /** @type {any} */
-
     let error;
     When('evaluated', async () => {
       error = await definition.evaluate('screening', { Applicant: { income: 5000 } }).catch((/** @type {Error} */ err) => err);
@@ -162,6 +161,69 @@ Feature('FEEL seam', () => {
     And('the original service error is chained as cause', () => {
       expect(error.cause, 'cause').to.be.instanceof(Error);
       expect(error.cause.message).to.equal('credit bureau unavailable for income 5000');
+    });
+  });
+
+  Scenario('calling a non-existing service function yields null, not an error', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('the screening resource without the credit score service registered', async () => {
+      definition = await getDefinition(testHelpers.resource('screening.dmn'), { services: { unrelated: () => 1 } });
+    });
+
+    /** @type {any} */
+
+    let result;
+    When('evaluated', async () => {
+      result = await definition.evaluate('screening', { Applicant: { income: 5000 } });
+    });
+
+    Then('the invocation yielded null per FEEL semantics, no rule matched, and the decision resolved to null', () => {
+      expect(result).to.be.null;
+    });
+  });
+
+  Scenario('an async service function fails loudly instead of leaking a promise', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('the screening resource with a promise-returning credit score service', async () => {
+      definition = await getDefinition(testHelpers.resource('screening.dmn'), {
+        services: {
+          creditScore(/** @type {{income: number}} */ applicant) {
+            return Promise.resolve(applicant.income >= 4000 ? 700 : 500);
+          },
+        },
+      });
+    });
+
+    /** @type {any} */
+
+    let error;
+    When('evaluated', async () => {
+      error = await definition.evaluate('screening', { Applicant: { income: 5000 } }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error names the service and the synchrony requirement', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/creditScore/);
+      expect(error.message).to.match(/synchronous/);
+    });
+
+    When('the service instead returns a rejecting promise', async () => {
+      definition = await getDefinition(testHelpers.resource('screening.dmn'), {
+        services: {
+          creditScore(/** @type {{income: number}} */ applicant) {
+            return Promise.reject(new Error(`credit bureau unavailable for income ${applicant.income}`));
+          },
+        },
+      });
+      error = await definition.evaluate('screening', { Applicant: { income: 5000 } }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('the same decision error surfaces, not an unhandled rejection', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/creditScore/);
+      expect(error.message).to.match(/synchronous/);
     });
   });
 

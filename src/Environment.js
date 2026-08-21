@@ -1,6 +1,8 @@
 import { Expressions } from './Expressions.js';
+import { DecisionError } from './error/Errors.js';
 
 const kServices = Symbol.for('services');
+const kGuardedServices = Symbol.for('guarded services');
 const kVariables = Symbol.for('variables');
 
 /**
@@ -26,6 +28,7 @@ export function Environment(options = {}) {
   /** @type {(scope: string) => import('#types').ILogger} */
   this.Logger = options.Logger || DummyLogger;
   this[kServices] = options.services || {};
+  this[kGuardedServices] = guardServices(this[kServices], this.Logger('environment'));
   this[kVariables] = options.variables || {};
 }
 
@@ -129,7 +132,7 @@ Environment.prototype.addService = function addService(name, fn) {
  * @param {Record<string, any>} [context] merged over environment variables
  */
 Environment.prototype.resolveExpression = function resolveExpression(expression, context) {
-  return this.expressions.resolveExpression(expression, { services: this[kServices], ...this[kVariables], ...context });
+  return this.expressions.resolveExpression(expression, { services: this[kGuardedServices], ...this[kVariables], ...context });
 };
 
 /**
@@ -139,8 +142,56 @@ Environment.prototype.resolveExpression = function resolveExpression(expression,
  * @param {Record<string, any>} [context] merged over environment variables, tested value on key `?`
  */
 Environment.prototype.unaryTest = function unaryTest(test, context) {
-  return this.expressions.unaryTest(test, { services: this[kServices], ...this[kVariables], ...context });
+  return this.expressions.unaryTest(test, { services: this[kGuardedServices], ...this[kVariables], ...context });
 };
+
+/**
+ * Overlay services with a proxy that fails a promise-returning service loudly —
+ * FEEL evaluation is synchronous, so a leaked promise would silently corrupt the
+ * result instead of erroring, and its eventual rejection could never be observed.
+ * Reading an unregistered service name logs a warning, since FEEL resolves the
+ * invocation to null without an error
+ * @param {Record<string, Function>} services
+ * @param {import('#types').ILogger} logger
+ * @returns {Record<string, Function>}
+ */
+function guardServices(services, logger) {
+  const wrappers = new Map();
+  const warned = new Set();
+  return new Proxy(services, {
+    // feelin probes context keys with `in` — warn once per unregistered name
+    has(target, name) {
+      const found = name in target;
+      if (!found && typeof name === 'string' && !warned.has(name)) {
+        warned.add(name);
+        logger.warn(`<services.${name}> is not a registered service, a FEEL invocation yields null`);
+      }
+      return found;
+    },
+    get(target, name) {
+      const fn = target[name];
+      if (typeof fn !== 'function') return fn;
+      let wrapper = wrappers.get(fn);
+      if (!wrapper) {
+        wrapper = function guardedService(...args) {
+          const result = fn.apply(this, args);
+          if (typeof result?.then === 'function') {
+            result.then(undefined, () => {
+              /* the promise is discarded, so its rejection is not unhandled */
+            });
+            throw new DecisionError(`service <${String(name)}> returned a promise, service functions must be synchronous`);
+          }
+          return result;
+        };
+        // feelin source-parses the signature for parameter names and arity
+        wrapper.toString = () => fn.toString();
+        if (fn.$args) wrapper.$args = fn.$args;
+        wrappers.set(fn, wrapper);
+      }
+      return wrapper;
+    },
+  });
+}
 
 function validateOptions(input) {
   const options = {};
