@@ -5,9 +5,10 @@ export class DmnError extends Error {
   /**
    * @param {string} description
    * @param {{ id?: string, type?: string }} [source] element that raised the error
+   * @param {ErrorOptions} [options] passed to Error, e.g. `cause`
    */
-  constructor(description, source) {
-    super(description);
+  constructor(description, source, options) {
+    super(description, options);
     this.name = this.constructor.name;
     this.source = source && { id: source.id, type: source.type };
   }
@@ -20,10 +21,9 @@ export class DecisionError extends DmnError {
   /**
    * @param {string} description
    * @param {{ id?: string, type?: string }} [source]
-   * @param {Error} [inner] original error, e.g. from feelin
+   * @param {Error} [cause] original error, e.g. from feelin, chained as standard `cause`
    */
-  constructor(description, source, inner) {
-    super(description, source);
-    if (inner) this.inner = inner;
+  constructor(description, source, cause) {
+    super(description, source, cause && { cause });
   }
 }

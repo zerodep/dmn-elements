@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## v0.1.0 - 2026-08-21
+
+### Breaking
+
+- `DecisionError.inner` is removed — the original error, e.g. from feelin or a throwing service, is chained as the standard `cause` instead, so Node prints its stack as a nested `[cause]` block
+
+### Added
+
+- Environment `services` are exposed to FEEL under `services` — named host functions callable from any expression or unary test, e.g. `services.creditScore(Applicant)`; a variable or evaluation input named `services` shadows the overlay
+- A service function that throws fails the evaluation with a `DecisionError` carrying the service error message and the original error as `cause`
 
 ## v0.0.5 - 2026-08-13
 

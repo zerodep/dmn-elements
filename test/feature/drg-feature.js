@@ -292,9 +292,9 @@ Feature('decision requirement graph', () => {
       error = await definition.evaluate('broken', {}).catch((/** @type {Error} */ err) => err);
     });
 
-    Then('a decision error wraps the FEEL error', () => {
+    Then('a decision error wraps the FEEL error as cause', () => {
       expect(error).to.be.instanceof(DecisionError);
-      expect(error.inner).to.be.instanceof(Error);
+      expect(error.cause).to.be.instanceof(Error);
     });
   });
 

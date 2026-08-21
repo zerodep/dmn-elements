@@ -122,21 +122,24 @@ Environment.prototype.addService = function addService(name, fn) {
 };
 
 /**
- * Evaluate a FEEL expression with environment variables as base context
+ * Evaluate a FEEL expression with environment variables as base context and
+ * services exposed under `services` — a variable or context key named
+ * `services` shadows the overlay
  * @param {string} expression
  * @param {Record<string, any>} [context] merged over environment variables
  */
 Environment.prototype.resolveExpression = function resolveExpression(expression, context) {
-  return this.expressions.resolveExpression(expression, { ...this[kVariables], ...context });
+  return this.expressions.resolveExpression(expression, { services: this[kServices], ...this[kVariables], ...context });
 };
 
 /**
- * Evaluate a FEEL unary tests expression with environment variables as base context
+ * Evaluate a FEEL unary tests expression with environment variables as base context and
+ * services exposed under `services`
  * @param {string} test
  * @param {Record<string, any>} [context] merged over environment variables, tested value on key `?`
  */
 Environment.prototype.unaryTest = function unaryTest(test, context) {
-  return this.expressions.unaryTest(test, { ...this[kVariables], ...context });
+  return this.expressions.unaryTest(test, { services: this[kServices], ...this[kVariables], ...context });
 };
 
 function validateOptions(input) {

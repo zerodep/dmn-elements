@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="screeningDefinitions" name="Screening" namespace="https://example.com/dmn/screening">
+  <inputData id="applicantInput" name="Applicant">
+    <variable id="applicantVariable" name="Applicant" />
+  </inputData>
+  <decision id="screening" name="Screening">
+    <variable id="screeningVariable" name="Screening" typeRef="string" />
+    <informationRequirement id="screeningRequiresApplicant">
+      <requiredInput href="#applicantInput" />
+    </informationRequirement>
+    <decisionTable id="screeningTable">
+      <input id="screeningInput">
+        <inputExpression id="screeningInputExpression" typeRef="number">
+          <text>services.creditScore(Applicant)</text>
+        </inputExpression>
+      </input>
+      <output id="screeningOutput" name="screening" typeRef="string" />
+      <rule id="approvedRule">
+        <inputEntry id="approvedEntry">
+          <text>&gt;= 600</text>
+        </inputEntry>
+        <outputEntry id="approvedOutcome">
+          <text>"approved"</text>
+        </outputEntry>
+      </rule>
+      <rule id="reviewRule">
+        <inputEntry id="reviewEntry">
+          <text>&lt; 600</text>
+        </inputEntry>
+        <outputEntry id="reviewOutcome">
+          <text>"review"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="screeningDiagram">
+      <dmndi:DMNShape id="screeningShape" dmnElementRef="screening">
+        <dc:Bounds height="80" width="180" x="160" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="applicantInputShape" dmnElementRef="applicantInput">
+        <dc:Bounds height="45" width="125" x="187" y="240" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="screeningRequiresApplicantEdge" dmnElementRef="screeningRequiresApplicant">
+        <di:waypoint x="250" y="240" />
+        <di:waypoint x="250" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

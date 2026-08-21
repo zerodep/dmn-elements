@@ -3,8 +3,8 @@
   "compilerOptions": {
     "emitDeclarationOnly": true,
     "sourceMap": false,
-    "lib": ["es2020"],
-    "target": "es2020",
+    "lib": ["es2022"],
+    "target": "es2022",
     "declaration": true,
     "noEmitOnError": true,
     "noErrorTruncation": true,

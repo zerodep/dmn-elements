@@ -63,15 +63,15 @@ Returns the dmn-moddle decision definition, or `undefined`.
 
 `new Environment(options)` carries the pluggable seams shared by an evaluation:
 
-| Option        | Purpose                                                                                                                               |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `variables`   | base FEEL context — evaluation input takes precedence                                                                                 |
-| `settings`    | engine configuration, see [Settings](#settings)                                                                                       |
-| `expressions` | FEEL engine, feelin by default — a replacement must implement `resolveExpression(expression, context)` and `unaryTest(test, context)` |
-| `services`    | named host functions, available through `getServiceByName`                                                                            |
-| `output`      | shared output object                                                                                                                  |
-| `extensions`  | named extension functions decorating elements beyond the DMN schema, see [Extensions](#extensions)                                    |
-| `Logger`      | logger factory `(scope) => ({ debug, error, warn })`, silent by default — see [Debug](../README.md#debug)                             |
+| Option        | Purpose                                                                                                                                                                                                                                 |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `variables`   | base FEEL context — evaluation input takes precedence                                                                                                                                                                                   |
+| `settings`    | engine configuration, see [Settings](#settings)                                                                                                                                                                                         |
+| `expressions` | FEEL engine, feelin by default — a replacement must implement `resolveExpression(expression, context)` and `unaryTest(test, context)`                                                                                                   |
+| `services`    | named host functions, exposed to FEEL under `services` (e.g. `services.creditScore(Applicant)`) and available through `getServiceByName` — must be synchronous, and a variable or evaluation input named `services` shadows the overlay |
+| `output`      | shared output object                                                                                                                                                                                                                    |
+| `extensions`  | named extension functions decorating elements beyond the DMN schema, see [Extensions](#extensions)                                                                                                                                      |
+| `Logger`      | logger factory `(scope) => ({ debug, error, warn })`, silent by default — see [Debug](../README.md#debug)                                                                                                                               |
 
 ## Extensions
 

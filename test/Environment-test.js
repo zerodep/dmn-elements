@@ -117,6 +117,25 @@ describe('Environment', () => {
       expect(environment.getServiceByName('kept'), 'kept').to.be.a('function');
       expect(environment.getServiceByName('added'), 'added').to.be.a('function');
     });
+
+    it('resolveExpression exposes services under services', () => {
+      const environment = new Environment({ services: { double: (/** @type {number} */ n) => n * 2 } });
+      expect(environment.resolveExpression('services.double(4)')).to.equal(8);
+    });
+
+    it('unaryTest exposes services under services', () => {
+      const environment = new Environment({ services: { minimum: () => 3 } });
+      expect(environment.unaryTest('>= services.minimum()', { '?': 5 })).to.be.true;
+      expect(environment.unaryTest('>= services.minimum()', { '?': 2 })).to.be.false;
+    });
+
+    it('a variable named services shadows the services overlay', () => {
+      const environment = new Environment({
+        services: { rate: () => 1 },
+        variables: { services: { rate: 42 } },
+      });
+      expect(environment.resolveExpression('services.rate')).to.equal(42);
+    });
   });
 
   describe('assignVariables() and assignSettings()', () => {

@@ -27,7 +27,7 @@ export interface EnvironmentOptions {
   extensions?: Record<string, ExtensionFactory>;
   Logger?: (scope: string) => ILogger;
   output?: Record<string, any>;
-  services?: Record<string, (...args: any[]) => void>;
+  services?: Record<string, (...args: any[]) => any>;
   settings?: Record<string, any>;
   variables?: Record<string, any>;
   [x: string]: any;

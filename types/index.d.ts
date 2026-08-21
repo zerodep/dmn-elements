@@ -191,16 +191,19 @@ declare module 'dmn-elements' {
 		
 		addService(name: string, fn: Function): void;
 		/**
-		 * Evaluate a FEEL expression with environment variables as base context
+		 * Evaluate a FEEL expression with environment variables as base context and
+		 * services exposed under `services` — a variable or context key named
+		 * `services` shadows the overlay
 		 * @param context merged over environment variables
 		 */
 		resolveExpression(expression: string, context?: Record<string, any>): any;
 		/**
-		 * Evaluate a FEEL unary tests expression with environment variables as base context
+		 * Evaluate a FEEL unary tests expression with environment variables as base context and
+		 * services exposed under `services`
 		 * @param context merged over environment variables, tested value on key `?`
 		 */
 		unaryTest(test: string, context?: Record<string, any>): boolean;
-		[kServices]: Record<string, (...args: any[]) => void>;
+		[kServices]: Record<string, (...args: any[]) => any>;
 		[kVariables]: Record<string, any>;
 	}
 	const kServices: unique symbol;
@@ -403,11 +406,12 @@ declare module 'dmn-elements' {
 	export class DmnError extends Error {
 		/**
 		 * @param source element that raised the error
+		 * @param options passed to Error, e.g. `cause`
 		 */
 		constructor(description: string, source?: {
 			id?: string;
 			type?: string;
-		});
+		}, options?: ErrorOptions);
 		source: {
 			id: string | undefined;
 			type: string | undefined;
@@ -418,13 +422,12 @@ declare module 'dmn-elements' {
 	 */
 	export class DecisionError extends DmnError {
 		/**
-		 * @param inner original error, e.g. from feelin
+		 * @param cause original error, e.g. from feelin, chained as standard `cause`
 		 */
 		constructor(description: string, source?: {
 			id?: string;
 			type?: string;
-		}, inner?: Error);
-		inner: Error | undefined;
+		}, cause?: Error);
 	}
   interface IExpressions {
 	resolveExpression(expression: string, context?: Record<string, any>): any;
@@ -455,7 +458,7 @@ declare module 'dmn-elements' {
 	extensions?: Record<string, ExtensionFactory>;
 	Logger?: (scope: string) => ILogger;
 	output?: Record<string, any>;
-	services?: Record<string, (...args: any[]) => void>;
+	services?: Record<string, (...args: any[]) => any>;
 	settings?: Record<string, any>;
 	variables?: Record<string, any>;
 	[x: string]: any;
@@ -1120,11 +1123,12 @@ declare module 'dmn-elements/errors' {
 	export class DmnError extends Error {
 		/**
 		 * @param source element that raised the error
+		 * @param options passed to Error, e.g. `cause`
 		 */
 		constructor(description: string, source?: {
 			id?: string;
 			type?: string;
-		});
+		}, options?: ErrorOptions);
 		source: {
 			id: string | undefined;
 			type: string | undefined;
@@ -1135,13 +1139,12 @@ declare module 'dmn-elements/errors' {
 	 */
 	export class DecisionError extends DmnError {
 		/**
-		 * @param inner original error, e.g. from feelin
+		 * @param cause original error, e.g. from feelin, chained as standard `cause`
 		 */
 		constructor(description: string, source?: {
 			id?: string;
 			type?: string;
-		}, inner?: Error);
-		inner: Error | undefined;
+		}, cause?: Error);
 	}
 
 	export {};

@@ -1,7 +1,7 @@
 import * as testHelpers from '../helpers/testHelpers.js';
 import * as factory from '../helpers/factory.js';
 import * as ck from 'chronokinesis';
-import { Definition } from 'dmn-elements';
+import { Definition, DecisionError } from 'dmn-elements';
 
 /**
  * FEEL semantics belong to feelin (tested upstream against the DMN TCK).
@@ -97,6 +97,109 @@ Feature('FEEL seam', () => {
 
     Then('the evaluation input won and access is denied', () => {
       expect(result).to.equal('denied');
+    });
+  });
+
+  Scenario('environment services are callable in FEEL under services', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('the screening resource where the input expression calls services.creditScore(Applicant)', async () => {
+      definition = await getDefinition(testHelpers.resource('screening.dmn'), {
+        services: {
+          creditScore(/** @type {{income: number}} */ applicant) {
+            return applicant.income >= 4000 ? 700 : 500;
+          },
+        },
+      });
+    });
+
+    /** @type {any} */
+
+    let result;
+    When('evaluated with a high-income applicant', async () => {
+      result = await definition.evaluate('screening', { Applicant: { income: 5000 } });
+    });
+
+    Then('the service-scored applicant is approved', () => {
+      expect(result).to.equal('approved');
+    });
+
+    When('evaluated with a low-income applicant', async () => {
+      result = await definition.evaluate('screening', { Applicant: { income: 1000 } });
+    });
+
+    Then('the service-scored applicant is up for review', () => {
+      expect(result).to.equal('review');
+    });
+  });
+
+  Scenario('a throwing service function fails the evaluation', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('the screening resource with a credit score service that throws', async () => {
+      definition = await getDefinition(testHelpers.resource('screening.dmn'), {
+        services: {
+          // the parameter must be declared — feelin nulls surplus-argument invocations without calling
+          creditScore(/** @type {{income: number}} */ applicant) {
+            throw new Error(`credit bureau unavailable for income ${applicant.income}`);
+          },
+        },
+      });
+    });
+
+    /** @type {any} */
+
+    let error;
+    When('evaluated', async () => {
+      error = await definition.evaluate('screening', { Applicant: { income: 5000 } }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('the evaluation rejects with a decision error carrying the service error message', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/credit bureau unavailable/);
+    });
+
+    And('the original service error is chained as cause', () => {
+      expect(error.cause, 'cause').to.be.instanceof(Error);
+      expect(error.cause.message).to.equal('credit bureau unavailable for income 5000');
+    });
+  });
+
+  Scenario('services are callable in unary tests, and evaluation input can shadow them', () => {
+    const scoreTable = factory.decisionTableSource({
+      id: 'grading',
+      inputs: [{ text: 'Score' }],
+      outputs: [{ name: 'grade' }],
+      rules: [
+        { input: ['>= services.passingScore()'], output: ['"pass"'] },
+        { input: ['< services.passingScore()'], output: ['"fail"'] },
+      ],
+    });
+
+    /** @type {Definition} */
+
+    let definition;
+    Given('a grading table with a rule entry calling services.passingScore()', async () => {
+      definition = await getDefinition(scoreTable, { services: { passingScore: () => 60 } });
+    });
+
+    /** @type {any} */
+
+    let result;
+    When('evaluated with a score above the service threshold', async () => {
+      result = await definition.evaluate('grading', { Score: 75 });
+    });
+
+    Then('the grade is a pass', () => {
+      expect(result).to.equal('pass');
+    });
+
+    When('evaluated with input named services shadowing the overlay', async () => {
+      result = await definition.evaluate('grading', { Score: 75, services: { passingScore: () => 80 } });
+    });
+
+    Then('the shadowing services decided and the grade is a fail', () => {
+      expect(result).to.equal('fail');
     });
   });
 
