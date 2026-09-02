@@ -549,6 +549,21 @@ Feature('DMN 1.4 boxed expressions', () => {
       expect(error.message).to.match(/has no iterator variable/);
     });
 
+    When('a some in entry evaluates to a non-list', async () => {
+      error = await evaluateError(
+        'someScalarIn',
+        `<some id="z" iteratorVariable="element">
+          <in id="zIn"><literalExpression id="zInE"><text>1</text></literalExpression></in>
+          <satisfies id="zSatisfies"><literalExpression id="zSatisfiesE"><text>true</text></literalExpression></satisfies>
+        </some>`
+      );
+    });
+
+    Then('a decision error points out the non-list in entry', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/in entry must evaluate to a list/);
+    });
+
     When('a conditional if entry holds an unsupported expression type', async () => {
       error = await evaluateError(
         'oddIf',
@@ -563,6 +578,79 @@ Feature('DMN 1.4 boxed expressions', () => {
     Then('a decision error points out the unsupported if expression', () => {
       expect(error).to.be.instanceof(DecisionError);
       expect(error.message).to.match(/unsupported if expression dmn:UnaryTests/);
+    });
+  });
+
+  Scenario('boxed iterators over a single-element list', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="singleDefinitions" name="Single" namespace="https://example.com/dmn/single">
+  <inputData id="scoresInput" name="Scores">
+    <variable id="scoresVariable" name="Scores" />
+  </inputData>
+  <decision id="passed" name="Passed">
+    <variable id="passedVariable" name="Passed" />
+    <informationRequirement id="passedRequiresScores"><requiredInput href="#scoresInput" /></informationRequirement>
+    <filter id="passedFilter">
+      <in id="passedIn"><literalExpression id="passedInExpression"><text>Scores</text></literalExpression></in>
+      <match id="passedMatch"><literalExpression id="passedMatchExpression"><text>item >= 50</text></literalExpression></match>
+    </filter>
+  </decision>
+  <decision id="doubled" name="Doubled">
+    <variable id="doubledVariable" name="Doubled" />
+    <informationRequirement id="doubledRequiresScores"><requiredInput href="#scoresInput" /></informationRequirement>
+    <for id="doubledFor" iteratorVariable="score">
+      <in id="doubledIn"><literalExpression id="doubledInExpression"><text>Scores</text></literalExpression></in>
+      <return id="doubledReturn"><literalExpression id="doubledReturnExpression"><text>score * 2</text></literalExpression></return>
+    </for>
+  </decision>
+  <decision id="anyPassed" name="Any passed">
+    <variable id="anyPassedVariable" name="Any passed" />
+    <informationRequirement id="anyPassedRequiresScores"><requiredInput href="#scoresInput" /></informationRequirement>
+    <some id="anyPassedSome" iteratorVariable="score">
+      <in id="anyPassedIn"><literalExpression id="anyPassedInExpression"><text>Scores</text></literalExpression></in>
+      <satisfies id="anyPassedSatisfies"><literalExpression id="anyPassedSatisfiesExpression"><text>score >= 50</text></literalExpression></satisfies>
+    </some>
+  </decision>
+  <decision id="allPassed" name="All passed">
+    <variable id="allPassedVariable" name="All passed" />
+    <informationRequirement id="allPassedRequiresScores"><requiredInput href="#scoresInput" /></informationRequirement>
+    <every id="allPassedEvery" iteratorVariable="score">
+      <in id="allPassedIn"><literalExpression id="allPassedInExpression"><text>Scores</text></literalExpression></in>
+      <satisfies id="allPassedSatisfies"><literalExpression id="allPassedSatisfiesExpression"><text>score >= 50</text></literalExpression></satisfies>
+    </every>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition where a filter, a for, a some, and an every iterate the scores input', async () => {
+      definition = await getDefinition(source);
+    });
+
+    /** @type {any} */
+    let result;
+    When('the filter is evaluated with a single score', async () => {
+      result = await definition.evaluate('passed', { Scores: [70] });
+    });
+
+    Then('the single element stays a list', () => {
+      expect(result).to.deep.equal([70]);
+    });
+
+    When('the for iteration is evaluated with a single score', async () => {
+      result = await definition.evaluate('doubled', { Scores: [70] });
+    });
+
+    Then('one return value is listed', () => {
+      expect(result).to.deep.equal([140]);
+    });
+
+    When('the quantifiers are evaluated with a single score', async () => {
+      result = await Promise.all([definition.evaluate('anyPassed', { Scores: [70] }), definition.evaluate('allPassed', { Scores: [70] })]);
+    });
+
+    Then('both hold', () => {
+      expect(result).to.deep.equal([true, true]);
     });
   });
 });

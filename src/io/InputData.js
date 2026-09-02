@@ -1,4 +1,5 @@
 import { DrgElement } from '../drgElement/DrgElement.js';
+import { DmnError, DecisionError } from '../error/Errors.js';
 import { coerceTypeRef } from '../typeRef.js';
 
 /**
@@ -29,7 +30,8 @@ InputDataBehaviour.prototype.execute = function execute(executeMessage, callback
   try {
     coerced = coerceTypeRef(value, this.variable?.typeRef, this.element);
   } catch (err) {
-    return callback(/** @type {Error} */ (err));
+    // a plain error from a type override is wrapped like everywhere else, with the original as cause
+    return callback(err instanceof DmnError ? err : new DecisionError(/** @type {Error} */ (err).message, this, err));
   }
   return callback(null, coerced);
 };

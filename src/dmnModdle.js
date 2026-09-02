@@ -1,14 +1,14 @@
 import dmn13 from 'dmn-moddle/resources/dmn/json/dmn13.json' with { type: 'json' };
 
-/**
- * @typedef {{ name: string, prefix: string, uri: string, xml: Record<string, any>, types: Record<string, any>[] }} ModdlePackage
- */
+/** @typedef {import('moddle').PackageDefinition} PackageDefinition */
+/** @typedef {import('moddle').TypeDefinition} TypeDefinition */
 
 /**
  * DMN 1.4 boxed expression grammar on top of dmn-moddle's DMN 1.3 metamodel —
  * conditional, filter, and the iterators (for, some, every) with their child
  * expression wrappers, per the DMN 1.4/1.5 XSD.
  */
+/** @type {TypeDefinition[]} */
 const boxedExpressionTypes = [
   {
     name: 'ChildExpression',
@@ -86,7 +86,7 @@ const extendedTypes = dmn13.types.map((type) =>
  * the DMN 1.5 item definition typeConstraint.
  * Pass as the `dmn` package to DmnModdle to replace the built-in one:
  * `new DmnModdle({ dmn })`
- * @type {ModdlePackage}
+ * @type {PackageDefinition}
  */
 export const dmn = {
   ...dmn13,

@@ -350,4 +350,162 @@ Feature('hit policy edge cases', () => {
       expect(result).to.deep.equal({ status: 'Approved', rate: 'Best' });
     });
   });
+
+  Scenario('any hit policy over no matched rules', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('the bonus table with ANY hit policy', async () => {
+      definition = await getDefinition(factory.decisionTableSource({ ...bonusTable, hitPolicy: 'ANY' }));
+    });
+
+    /** @type {any} */
+    let result;
+    When('evaluated with an amount matching no rule', async () => {
+      result = await definition.evaluate('bonus', { Amount: -1 });
+    });
+
+    Then('the result is null', () => {
+      expect(result).to.be.null;
+    });
+  });
+
+  Scenario('priority hit policy over no matched rules', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('the bonus table with PRIORITY hit policy and output values', async () => {
+      definition = await getDefinition(
+        factory.decisionTableSource({ ...bonusTable, hitPolicy: 'PRIORITY', outputs: [{ name: 'bonus', outputValues: '20, 10' }] })
+      );
+    });
+
+    /** @type {any} */
+    let result;
+    When('evaluated with an amount matching no rule', async () => {
+      result = await definition.evaluate('bonus', { Amount: -1 });
+    });
+
+    Then('the result is null', () => {
+      expect(result).to.be.null;
+    });
+  });
+
+  Scenario('a decision table without output columns', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('a table declaring a rule but no outputs', async () => {
+      definition = await getDefinition(
+        factory.decisionTableSource({ id: 'blank', inputs: [{ text: 'Amount' }], rules: [{ input: ['-'] }] })
+      );
+    });
+
+    /** @type {any} */
+    let error;
+    When('evaluated', async () => {
+      error = await definition.evaluate('blank', { Amount: 1 }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the missing output', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/decision table has no output/);
+    });
+  });
+
+  Scenario('a decision table without input columns', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('a table with a single rule and no inputs', async () => {
+      definition = await getDefinition(
+        factory.decisionTableSource({ id: 'constant', outputs: [{ name: 'value' }], rules: [{ output: ['"always"'] }] })
+      );
+    });
+
+    /** @type {any} */
+    let result;
+    When('evaluated without input', async () => {
+      result = await definition.evaluate('constant', {});
+    });
+
+    Then('the rule matched unconditionally', () => {
+      expect(result).to.equal('always');
+    });
+  });
+
+  Scenario('an input column without an input expression', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('a FIRST table where the input expression is empty and the rules test for null', async () => {
+      definition = await getDefinition(
+        factory.decisionTableSource({
+          id: 'blind',
+          hitPolicy: 'FIRST',
+          inputs: [{ text: '' }],
+          outputs: [{ name: 'seen' }],
+          rules: [
+            { input: ['not(null)'], output: ['"something"'] },
+            { input: ['null'], output: ['"nothing"'] },
+          ],
+        })
+      );
+    });
+
+    /** @type {any} */
+    let result;
+    When('evaluated', async () => {
+      result = await definition.evaluate('blind', {});
+    });
+
+    Then('the input column contributed null', () => {
+      expect(result).to.equal('nothing');
+    });
+  });
+
+  Scenario('an empty output entry', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('a table where the matching rule has an empty output entry', async () => {
+      definition = await getDefinition(
+        factory.decisionTableSource({
+          id: 'hollow',
+          inputs: [{ text: 'Amount' }],
+          outputs: [{ name: 'bonus' }],
+          rules: [{ input: ['> 0'], output: [''] }],
+        })
+      );
+    });
+
+    /** @type {any} */
+    let result;
+    When('evaluated with a matching amount', async () => {
+      result = await definition.evaluate('hollow', { Amount: 1 });
+    });
+
+    Then('the output is null', () => {
+      expect(result).to.be.null;
+    });
+  });
+
+  Scenario('an output column without a name', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('a table with two output columns where the second has no name', async () => {
+      definition = await getDefinition(
+        factory.decisionTableSource({
+          id: 'anon',
+          inputs: [{ text: 'Amount' }],
+          outputs: [{ name: 'bonus' }, {}],
+          rules: [{ input: ['> 0'], output: ['10', '"extra"'] }],
+        })
+      );
+    });
+
+    /** @type {any} */
+    let result;
+    When('evaluated with a matching amount', async () => {
+      result = await definition.evaluate('anon', { Amount: 1 });
+    });
+
+    Then('the nameless output is keyed by its id', () => {
+      expect(result).to.deep.equal({ bonus: 10, anonOutput1: 'extra' });
+    });
+  });
 });

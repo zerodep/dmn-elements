@@ -313,4 +313,146 @@ Feature('decision service', () => {
       expect(error.message).to.match(/no output decision/);
     });
   });
+
+  Scenario('a decision service with dangling references', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="lostDefinitions" name="Lost" namespace="https://example.com/dmn/lost">
+  <decision id="known" name="Known">
+    <variable id="knownVariable" name="Known" />
+    <literalExpression id="knownExpression"><text>1</text></literalExpression>
+  </decision>
+  <decisionService id="lostOutput" name="Lost output">
+    <outputDecision href="#nope" />
+  </decisionService>
+  <decisionService id="lostInput" name="Lost input">
+    <outputDecision href="#known" />
+    <inputDecision href="#nope" />
+  </decisionService>
+  <decisionService id="lostData" name="Lost data">
+    <outputDecision href="#known" />
+    <inputData href="#nope" />
+  </decisionService>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source where services reference a missing element in every role', async () => {
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let error;
+    When('the service with a dangling output decision is evaluated', async () => {
+      error = await definition.evaluate('lostOutput', {}).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the missing output decision', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/output decision #nope was not found/);
+    });
+
+    When('the service with a dangling input decision is evaluated', async () => {
+      error = await definition.evaluate('lostInput', {}).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the missing input decision', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/input decision #nope was not found/);
+    });
+
+    When('the service with dangling input data is evaluated', async () => {
+      error = await definition.evaluate('lostData', {}).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the missing input data', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/input data #nope was not found/);
+    });
+  });
+
+  Scenario('a failing output decision in a directly evaluated service', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="clashDefinitions" name="Clash" namespace="https://example.com/dmn/clash">
+  <decision id="clash" name="Clash">
+    <variable id="clashVariable" name="Clash" />
+    <decisionTable id="clashTable">
+      <input id="clashInput"><inputExpression id="clashInputExpression"><text>Amount</text></inputExpression></input>
+      <output id="clashOutput" name="value" />
+      <rule id="oneRule"><inputEntry id="oneEntry"><text>-</text></inputEntry><outputEntry id="oneOutput"><text>1</text></outputEntry></rule>
+      <rule id="twoRule"><inputEntry id="twoEntry"><text>-</text></inputEntry><outputEntry id="twoOutput"><text>2</text></outputEntry></rule>
+    </decisionTable>
+  </decision>
+  <decisionService id="clashService" name="Clash service">
+    <outputDecision href="#clash" />
+  </decisionService>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source where the service output decision violates its hit policy', async () => {
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let error;
+    When('the service is evaluated directly', async () => {
+      error = await definition.evaluate('clashService', { Amount: 1 }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('the output decision error is raised', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/UNIQUE hit policy violated/);
+    });
+  });
+
+  Scenario('a decision service required by two decisions binds once', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="sharedDefinitions" name="Shared" namespace="https://example.com/dmn/shared">
+  <decision id="base" name="Base">
+    <variable id="baseVariable" name="Base" />
+    <literalExpression id="baseExpression"><text>1</text></literalExpression>
+  </decision>
+  <decisionService id="baseService" name="Base service">
+    <variable id="baseServiceVariable" name="Base service" />
+    <outputDecision href="#base" />
+  </decisionService>
+  <decision id="left" name="Left">
+    <variable id="leftVariable" name="Left" />
+    <knowledgeRequirement id="leftRequiresBaseService">
+      <requiredKnowledge href="#baseService" />
+    </knowledgeRequirement>
+    <literalExpression id="leftExpression"><text>Base service()</text></literalExpression>
+  </decision>
+  <decision id="top" name="Top">
+    <variable id="topVariable" name="Top" />
+    <informationRequirement id="topRequiresLeft">
+      <requiredDecision href="#left" />
+    </informationRequirement>
+    <knowledgeRequirement id="topRequiresBaseService">
+      <requiredKnowledge href="#baseService" />
+    </knowledgeRequirement>
+    <literalExpression id="topExpression"><text>Left + Base service()</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source where top and left both require the base service', async () => {
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let traced;
+    When('top is traced', async () => {
+      traced = await definition.trace('top', {});
+    });
+
+    Then('both invocations succeeded', () => {
+      expect(traced.result).to.equal(2);
+    });
+
+    And('the service binding appears once in the trace', () => {
+      expect(traced.trace.filter((/** @type {any} */ entry) => entry.id === 'baseService')).to.have.length(1);
+    });
+  });
 });

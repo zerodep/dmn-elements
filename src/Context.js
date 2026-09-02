@@ -199,7 +199,7 @@ Context.prototype.getRequirements = function getRequirements(drgElementDef) {
   for (const requirement of [...(drgElementDef.informationRequirement || []), ...(drgElementDef.knowledgeRequirement || [])]) {
     const target = requirement.requiredDecision || requirement.requiredInput || requirement.requiredKnowledge;
     // dmn-moddle keeps DRG edges as unresolved DMNElementReference hrefs, e.g. #decisionId
-    const resolved = target?.href ? this.getDrgElementByHref(target.href) : target;
+    const resolved = target && this.getDrgElementByHref(target.href);
     if (resolved) required.push(resolved);
   }
   return required;

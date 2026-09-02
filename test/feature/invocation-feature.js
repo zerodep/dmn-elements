@@ -597,4 +597,41 @@ Feature('invocation decision logic', () => {
       expect(error.message).to.match(/unsupported binding expression dmn:UnaryTests/);
     });
   });
+
+  Scenario('an invocation without bindings', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="constantDefinitions" name="Constant" namespace="https://example.com/dmn/constant">
+  <businessKnowledgeModel id="constant" name="Constant">
+    <variable id="constantVariable" name="Constant" />
+    <encapsulatedLogic id="constantLogic">
+      <literalExpression id="constantBody"><text>"fixed"</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <decision id="fixed" name="Fixed">
+    <variable id="fixedVariable" name="Fixed" />
+    <knowledgeRequirement id="fixedRequiresConstant">
+      <requiredKnowledge href="#constant" />
+    </knowledgeRequirement>
+    <invocation id="fixedInvocation">
+      <literalExpression id="fixedCalledFunction"><text>Constant</text></literalExpression>
+    </invocation>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source where a decision invokes a parameterless model without bindings', async () => {
+      definition = await getDefinition(source);
+    });
+
+    /** @type {any} */
+    let result;
+    When('the decision is evaluated', async () => {
+      result = await definition.evaluate('fixed', {});
+    });
+
+    Then('the model was invoked without arguments', () => {
+      expect(result).to.equal('fixed');
+    });
+  });
 });

@@ -30,6 +30,24 @@ const source = `<?xml version="1.0" encoding="UTF-8"?>
   </decision>
 </definitions>`;
 
+const serviceSource = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="serviceDefinitions" name="Service" namespace="https://example.com/dmn/service">
+  <inputData id="ageInput" name="Age">
+    <variable id="ageVariable" name="Age" typeRef="number" />
+  </inputData>
+  <decision id="category" name="Category">
+    <variable id="categoryVariable" name="Category" />
+    <informationRequirement id="blankRequirement" />
+    <informationRequirement id="categoryRequiresAge">
+      <requiredInput href="#ageInput" />
+    </informationRequirement>
+    <literalExpression id="categoryExpression"><text>Age</text></literalExpression>
+  </decision>
+  <decisionService id="categoryService" name="Category service">
+    <outputDecision href="#category" />
+  </decisionService>
+</definitions>`;
+
 describe('Context', () => {
   /** @type {Context} */
   let context;
@@ -47,6 +65,13 @@ describe('Context', () => {
     it('defaults environment', async () => {
       const definitions = await testHelpers.moddleContext(source);
       expect(new Context(definitions).environment).to.be.instanceof(Environment);
+    });
+
+    it('accepts definitions without DRG elements', async () => {
+      const emptyContext = await testHelpers.context(`<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="emptyDefinitions" name="Empty" namespace="https://example.com/dmn/empty" />`);
+      expect(emptyContext.getDrgElements()).to.deep.equal([]);
+      expect(emptyContext.getDecisionById('anything')).to.be.undefined;
     });
   });
 
@@ -81,6 +106,23 @@ describe('Context', () => {
       });
     });
 
+    it('a decision service has no runtime element, it is walked by the definition execution', async () => {
+      const serviceContext = await testHelpers.context(serviceSource);
+      expect(serviceContext.getDrgElementById('categoryService'), 'definition').to.have.property('$type', 'dmn:DecisionService');
+      expect(serviceContext.getElementById('categoryService'), 'element').to.be.undefined;
+    });
+
+    it('an input data evaluates without execute message input, from environment variables', async () => {
+      const variablesContext = await testHelpers.context(source, { variables: { Age: '7' } });
+      const value = await new Promise((resolve, reject) => {
+        /** @type {any} */ (variablesContext.getElementById('ageInput')).evaluate(
+          {},
+          (/** @type {any} */ err, /** @type {any} */ result) => (err ? reject(err) : resolve(result))
+        );
+      });
+      expect(value).to.equal(7);
+    });
+
     it('a business knowledge model without logic errors on evaluate', (done) => {
       /** @type {any} */ (context.getElementById('ageRules')).evaluate({ input: {} }, (/** @type {any} */ err) => {
         expect(err).to.match(/no encapsulated logic/);
@@ -98,6 +140,12 @@ describe('Context', () => {
     it('is empty for an element without requirements', () => {
       const inputData = context.getDrgElementById('ageInput');
       expect(context.getRequirements(inputData)).to.deep.equal([]);
+    });
+
+    it('skips a requirement without a target', async () => {
+      const serviceContext = await testHelpers.context(serviceSource);
+      const requirements = serviceContext.getRequirements(serviceContext.getDecisionById('category'));
+      expect(requirements.map((/** @type {any} */ required) => required.id)).to.deep.equal(['ageInput']);
     });
   });
 

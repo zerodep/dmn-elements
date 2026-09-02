@@ -1,5 +1,5 @@
 import * as testHelpers from '../helpers/testHelpers.js';
-import { Definition } from 'dmn-elements';
+import { Definition, DecisionError } from 'dmn-elements';
 
 Feature('evaluation trace', () => {
   Scenario('tracing dependent decision tables', () => {
@@ -154,6 +154,25 @@ Feature('evaluation trace', () => {
 
     Then('the bare result is returned', () => {
       expect(result).to.equal('Roast beef');
+    });
+  });
+
+  Scenario('tracing a decision that fails', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from the dinner resource', async () => {
+      definition = new Definition(await testHelpers.context(testHelpers.resource('dinner.dmn')));
+    });
+
+    /** @type {any} */
+    let error;
+    When('an unknown decision is traced', async () => {
+      error = await definition.trace('unknown', {}).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('the trace rejects with the decision error', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/was not found/);
     });
   });
 });

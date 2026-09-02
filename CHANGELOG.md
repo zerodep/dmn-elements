@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+## v0.2.0 - 2026-09-02
+
+### Changed
+
+- A decision table without output columns fails with a pointed `DecisionError` — the result was silently null
+
+### Fixed
+
+- A type override throwing a plain error while coercing an input data value fails the evaluation with a `DecisionError` carrying the message and the original error as `cause`, as it already did for decision results — the plain error used to pass through unwrapped
+- A structure component typed by a collection item definition accepts a one-element list — the DMN singleton list conversion was applied before the referenced collection type was consulted, failing with `cannot coerce ... to collection`
+
 ## v0.1.0 - 2026-08-21
 
 ### Breaking

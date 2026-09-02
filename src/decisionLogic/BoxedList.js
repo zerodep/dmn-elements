@@ -1,5 +1,5 @@
-import { DmnError, DecisionError } from '../error/Errors.js';
 import { expressionValue } from './expressionValue.js';
+import { executeLogic } from './executeLogic.js';
 
 /**
  * Boxed list evaluation — dmn:List as decision logic.
@@ -25,13 +25,7 @@ export function BoxedList(listDef, context) {
  * @param {(err: Error | null, result?: any) => void} callback
  */
 BoxedList.prototype.execute = function execute(executeMessage, callback) {
-  let result;
-  try {
-    result = this.evaluate(executeMessage?.input);
-  } catch (err) {
-    return callback(err instanceof DmnError ? err : new DecisionError(/** @type {Error} */ (err).message, this, err));
-  }
-  return callback(null, result);
+  return executeLogic(this, executeMessage, callback);
 };
 
 /**

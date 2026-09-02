@@ -365,4 +365,62 @@ Feature('imported definitions', () => {
       expect(result).to.equal('as is');
     });
   });
+
+  Scenario('a failed import load is retried without reloading resolved imports', () => {
+    const librarySource = (/** @type {string} */ name, /** @type {string} */ namespace) => `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="${name}Definitions" name="${name}" namespace="${namespace}">
+  <itemDefinition id="${name}Type" name="t${name}"><typeRef>string</typeRef></itemDefinition>
+</definitions>`;
+
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="retryDefinitions" name="Retry" namespace="https://example.com/dmn/retry">
+  <import name="first" namespace="https://example.com/dmn/first" locationURI="first.dmn" importType="https://www.omg.org/spec/DMN/20191111/MODEL/" />
+  <import name="second" namespace="https://example.com/dmn/second" locationURI="second.dmn" importType="https://www.omg.org/spec/DMN/20191111/MODEL/" />
+  <decision id="answer" name="Answer">
+    <variable id="answerVariable" name="Answer" typeRef="first.tfirst" />
+    <literalExpression id="answerExpression"><text>"42"</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Record<string, number>} */
+    const calls = { first: 0, second: 0 };
+    /** @type {Definition} */
+    let definition;
+    Given('a definition with two imports where the second fails to resolve the first time', async () => {
+      definition = await getDefinition(source, {
+        settings: {
+          async resolveImport(/** @type {any} */ importDef) {
+            calls[importDef.name]++;
+            if (importDef.name === 'second' && calls.second === 1) throw new Error('second is temporarily unavailable');
+            return await testHelpers.moddleContext(librarySource(importDef.name, importDef.namespace));
+          },
+        },
+      });
+    });
+
+    /** @type {any} */
+    let error;
+    When('the decision is evaluated', async () => {
+      error = await definition.evaluate('answer', {}).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('the evaluation failed with the resolver error', () => {
+      expect(error).to.be.instanceof(Error);
+      expect(error.message).to.equal('second is temporarily unavailable');
+    });
+
+    /** @type {any} */
+    let result;
+    When('the decision is evaluated again', async () => {
+      result = await definition.evaluate('answer', {});
+    });
+
+    Then('the evaluation succeeded', () => {
+      expect(result).to.equal('42');
+    });
+
+    And('only the failed import was resolved again', () => {
+      expect(calls).to.deep.equal({ first: 1, second: 2 });
+    });
+  });
 });

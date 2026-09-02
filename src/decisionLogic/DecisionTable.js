@@ -1,5 +1,6 @@
-import { DmnError, DecisionError } from '../error/Errors.js';
+import { DecisionError } from '../error/Errors.js';
 import { coerceTypeRef } from '../typeRef.js';
+import { executeLogic } from './executeLogic.js';
 
 /**
  * Decision table evaluation — inputs, outputs, rules, and hit policy resolution.
@@ -19,6 +20,18 @@ export function DecisionTable(decisionTableDef, context) {
   this.context = context;
   this.environment = context.environment;
   this.logger = context.environment.Logger(this.type.toLowerCase());
+
+  const { input = [], output = [], rule = [], hitPolicy = 'UNIQUE', aggregation } = decisionTableDef;
+  /** @type {any[]} input clauses */
+  this.inputs = input;
+  /** @type {any[]} output clauses */
+  this.outputs = output;
+  /** @type {any[]} rules, in declaration order */
+  this.rules = rule;
+  /** @type {string} hit policy, UNIQUE when undeclared */
+  this.hitPolicy = hitPolicy;
+  /** @type {string | undefined} COLLECT aggregation */
+  this.aggregation = aggregation;
 }
 
 /**
@@ -26,13 +39,7 @@ export function DecisionTable(decisionTableDef, context) {
  * @param {(err: Error | null, result?: any) => void} callback
  */
 DecisionTable.prototype.execute = function execute(executeMessage, callback) {
-  let result;
-  try {
-    result = this.evaluate(executeMessage?.input, executeMessage?.trace);
-  } catch (err) {
-    return callback(err instanceof DmnError ? err : new DecisionError(/** @type {Error} */ (err).message, this, err));
-  }
-  return callback(null, result);
+  return executeLogic(this, executeMessage, callback);
 };
 
 /**
@@ -42,10 +49,11 @@ DecisionTable.prototype.execute = function execute(executeMessage, callback) {
  * @returns {any} hit policy resolved result
  */
 DecisionTable.prototype.evaluate = function evaluateTable(input = {}, trace) {
-  const { input: inputClauses = [], rule: rules = [], hitPolicy = 'UNIQUE', aggregation } = this.behaviour;
-  const environment = this.environment;
+  if (!this.outputs.length) throw new DecisionError(`<${this.id}> decision table has no output`, this);
 
-  const inputValues = inputClauses.map((clause) => {
+  const { rules, hitPolicy, aggregation, environment } = this;
+
+  const inputValues = this.inputs.map((clause) => {
     const inputExpression = clause.inputExpression;
     const text = inputExpression?.text;
     return text ? coerceTypeRef(environment.resolveExpression(text, input), inputExpression.typeRef, this) : null;
@@ -76,29 +84,26 @@ DecisionTable.prototype._matchesRule = function matchesRule(rule, inputValues, i
 
 /** @internal */
 DecisionTable.prototype._resolveHitPolicy = function resolveHitPolicy(matched, input) {
-  const hitPolicy = this.behaviour.hitPolicy || 'UNIQUE';
+  const hitPolicy = this.hitPolicy;
   // per the spec, default output entries are the result whenever no rule matched, regardless of hit policy
-  if (!matched.length && (this.behaviour.output || []).some((output) => output.defaultOutputEntry)) {
-    return this._defaultOutput(input);
-  }
+  if (!matched.length && this.outputs.some((output) => output.defaultOutputEntry)) return this._defaultOutput(input);
+
   switch (hitPolicy) {
     case 'UNIQUE': {
       if (matched.length > 1) throw this._hitPolicyError(hitPolicy, matched);
-      return matched.length ? this._ruleOutput(matched[0], input) : this._defaultOutput(input);
+      return matched.length ? this._ruleOutput(matched[0], input) : null;
     }
     case 'ANY': {
-      if (!matched.length) return this._defaultOutput(input);
+      if (!matched.length) return null;
       const outputs = matched.map((rule) => this._ruleOutput(rule, input));
       const first = JSON.stringify(outputs[0]);
       if (!outputs.every((output) => JSON.stringify(output) === first)) throw this._hitPolicyError(hitPolicy, matched);
       return outputs[0];
     }
     case 'FIRST':
-      return matched.length ? this._ruleOutput(matched[0], input) : this._defaultOutput(input);
-    case 'PRIORITY': {
-      if (!matched.length) return this._defaultOutput(input);
-      return this._sortByPriority(hitPolicy, matched, input)[0];
-    }
+      return matched.length ? this._ruleOutput(matched[0], input) : null;
+    case 'PRIORITY':
+      return matched.length ? this._sortByPriority(hitPolicy, matched, input)[0] : null;
     case 'RULE ORDER':
       return matched.map((rule) => this._ruleOutput(rule, input));
     case 'OUTPUT ORDER':
@@ -116,14 +121,14 @@ DecisionTable.prototype._resolveHitPolicy = function resolveHitPolicy(matched, i
  * @internal
  */
 DecisionTable.prototype._ruleOutput = function ruleOutput(rule, input) {
-  const outputs = this.behaviour.output || [];
-  const entries = rule.outputEntry || [];
-  if (outputs.length < 2) return this._entryValue(entries[0], input, outputs[0]?.typeRef);
+  const outputs = this.outputs;
+  const entries = rule.outputEntry;
+  if (outputs.length < 2) return this._entryValue(entries?.[0], input, outputs[0].typeRef);
 
   /** @type {Record<string, any>} */
   const result = {};
   for (const [idx, output] of outputs.entries()) {
-    result[outputName(output)] = this._entryValue(entries[idx], input, output.typeRef);
+    result[outputName(output)] = this._entryValue(entries?.[idx], input, output.typeRef);
   }
   return result;
 };
@@ -136,12 +141,11 @@ DecisionTable.prototype._entryValue = function entryValue(entry, input, typeRef)
 };
 
 /**
- * Default output entries apply when no rule matched
+ * Default output entries apply when no rule matched — the caller checks that at least one output declares one
  * @internal
  */
 DecisionTable.prototype._defaultOutput = function defaultOutput(input) {
-  const outputs = this.behaviour.output || [];
-  if (!outputs.some((output) => output.defaultOutputEntry)) return null;
+  const outputs = this.outputs;
   if (outputs.length < 2) return this._entryValue(outputs[0].defaultOutputEntry, input, outputs[0].typeRef);
 
   /** @type {Record<string, any>} */
@@ -157,7 +161,7 @@ DecisionTable.prototype._defaultOutput = function defaultOutput(input) {
  * @internal
  */
 DecisionTable.prototype._sortByPriority = function sortByPriority(hitPolicy, matched, input) {
-  const outputs = this.behaviour.output || [];
+  const outputs = this.outputs;
   // ranking considers the output columns that declare output values — a column without them is rank-neutral
   const priorities = outputs.map((output) => {
     const text = output.outputValues?.text;
@@ -189,9 +193,9 @@ DecisionTable.prototype._sortByPriority = function sortByPriority(hitPolicy, mat
 /** @internal */
 DecisionTable.prototype._collect = function collect(matched, input) {
   const values = matched.map((rule) => this._ruleOutput(rule, input));
-  const aggregation = this.behaviour.aggregation;
+  const aggregation = this.aggregation;
   if (!aggregation) return values;
-  if ((this.behaviour.output || []).length > 1) {
+  if (this.outputs.length > 1) {
     throw new DecisionError(`<${this.id}> COLLECT aggregation requires a single output`, this);
   }
 
@@ -219,6 +223,7 @@ DecisionTable.prototype._hitPolicyError = function hitPolicyError(hitPolicy, mat
   return new DecisionError(`<${this.id}> ${hitPolicy} hit policy violated by rules ${ruleIds}`, this);
 };
 
+/** an output column without a name is keyed by its id */
 function outputName(output) {
   return output.name || output.id;
 }

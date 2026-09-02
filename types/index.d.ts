@@ -775,6 +775,16 @@ declare module 'dmn-elements' {
 		context: Context;
 		environment: Environment | undefined;
 		logger: ILogger;
+		/** @type {any[]} input clauses */
+		inputs: any[];
+		/** @type {any[]} output clauses */
+		outputs: any[];
+		/** @type {any[]} rules, in declaration order */
+		rules: any[];
+		/** @type {string} hit policy, UNIQUE when undeclared */
+		hitPolicy: string;
+		/** @type {string | undefined} COLLECT aggregation */
+		aggregation: string | undefined;
 		/**
 		 * @param executeMessage evaluation input context
 		 * */
@@ -800,7 +810,7 @@ declare module 'dmn-elements' {
 		
 		_entryValue(entry: any, input: any, typeRef: any): any;
 		/**
-		 * Default output entries apply when no rule matched
+		 * Default output entries apply when no rule matched — the caller checks that at least one output declares one
 		 * */
 		_defaultOutput(input: any): any;
 		/**
@@ -1169,14 +1179,9 @@ declare module 'dmn-elements/dmn-moddle' {
 	 * Pass as the `dmn` package to DmnModdle to replace the built-in one:
 	 * `new DmnModdle({ dmn })`
 	 * */
-	export const dmn: ModdlePackage;
-	export type ModdlePackage = {
-		name: string;
-		prefix: string;
-		uri: string;
-		xml: Record<string, any>;
-		types: Record<string, any>[];
-	};
+	export const dmn: PackageDefinition;
+	export type PackageDefinition = import("moddle").PackageDefinition;
+	export type TypeDefinition = import("moddle").TypeDefinition;
 
 	export {};
 }

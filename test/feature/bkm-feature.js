@@ -335,4 +335,54 @@ Feature('business knowledge model', () => {
       expect(error.message).to.match(/circular/i);
     });
   });
+
+  Scenario('a business knowledge model required by two decisions binds once', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="sharedBkmDefinitions" name="Shared" namespace="https://example.com/dmn/shared-bkm">
+  <businessKnowledgeModel id="double" name="Double">
+    <variable id="doubleVariable" name="Double" />
+    <encapsulatedLogic id="doubleLogic">
+      <formalParameter id="doubleN" name="n" typeRef="number" />
+      <literalExpression id="doubleBody"><text>n * 2</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <decision id="left" name="Left">
+    <variable id="leftVariable" name="Left" />
+    <knowledgeRequirement id="leftRequiresDouble">
+      <requiredKnowledge href="#double" />
+    </knowledgeRequirement>
+    <literalExpression id="leftExpression"><text>Double(1)</text></literalExpression>
+  </decision>
+  <decision id="top" name="Top">
+    <variable id="topVariable" name="Top" />
+    <informationRequirement id="topRequiresLeft">
+      <requiredDecision href="#left" />
+    </informationRequirement>
+    <knowledgeRequirement id="topRequiresDouble">
+      <requiredKnowledge href="#double" />
+    </knowledgeRequirement>
+    <literalExpression id="topExpression"><text>Left + Double(2)</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source where top and left both require the double model', async () => {
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let traced;
+    When('top is traced', async () => {
+      traced = await definition.trace('top', {});
+    });
+
+    Then('both invocations succeeded', () => {
+      expect(traced.result).to.equal(6);
+    });
+
+    And('the knowledge binding appears once in the trace', () => {
+      expect(traced.trace.map((/** @type {any} */ entry) => entry.id)).to.deep.equal(['double', 'left', 'top']);
+    });
+  });
 });

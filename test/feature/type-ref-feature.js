@@ -244,4 +244,47 @@ Feature('typeRef coercion', () => {
       expect(error.message).to.match(/coerce/);
     });
   });
+
+  Scenario('a type override throwing a plain error on input data coercion', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="pickyDefinitions" name="Picky" namespace="https://example.com/dmn/picky">
+  <inputData id="scoreInput" name="Score">
+    <variable id="scoreVariable" name="Score" typeRef="tScore" />
+  </inputData>
+  <decision id="echo" name="Echo">
+    <variable id="echoVariable" name="Echo" />
+    <informationRequirement id="echoRequiresScore">
+      <requiredInput href="#scoreInput" />
+    </informationRequirement>
+    <literalExpression id="echoExpression"><text>Score</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('an inline source with a custom typed input data and a type override that throws a plain error', async () => {
+      definition = await getDefinition(source, {
+        settings: {
+          types: {
+            tScore() {
+              throw new Error('rejected by host');
+            },
+          },
+        },
+      });
+    });
+
+    /** @type {any} */
+    let error;
+    When('the decision is evaluated', async () => {
+      error = await definition.evaluate('echo', { Score: 1 }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error sourced at the input data carries the message with the plain error as cause', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.equal('rejected by host');
+      expect(error.source).to.deep.equal({ id: 'scoreInput', type: 'dmn:InputData' });
+      expect(error.cause).to.be.instanceof(Error).and.not.instanceof(DecisionError);
+    });
+  });
 });

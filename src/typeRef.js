@@ -116,7 +116,7 @@ function coerceItem(value, itemDef, element, chain) {
 
   if (itemDef.isCollection) {
     if (!Array.isArray(value)) {
-      throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to collection ${itemName(itemDef)}`, element);
+      throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to collection ${itemDef.name}`, element);
     }
     // a fresh chain per element — like components, descending into the value makes recursion finite
     return validateTypeConstraint(
@@ -126,8 +126,9 @@ function coerceItem(value, itemDef, element, chain) {
     );
   }
 
-  // DMN singleton list conversion — a one-element list converts to its element for a non-collection type
-  if (Array.isArray(value) && value.length === 1) value = value[0];
+  // DMN singleton list conversion — a one-element list converts to its element for a non-collection type;
+  // a type reference leaves the conversion to the referenced type, which may itself be a collection
+  if (!itemDef.typeRef && Array.isArray(value) && value.length === 1) value = value[0];
   if (value === null || value === undefined) return value;
   return validateTypeConstraint(coerceItemValue(value, itemDef, element, chain), itemDef, element);
 }
@@ -136,7 +137,7 @@ function coerceItem(value, itemDef, element, chain) {
 function validateTypeConstraint(value, itemDef, element) {
   const constraint = itemDef.typeConstraint?.text;
   if (constraint && !element.environment.unaryTest(constraint, { '?': value })) {
-    throw new DecisionError(`<${element.id}> value ${JSON.stringify(value)} violates type constraint of ${itemName(itemDef)}`, element);
+    throw new DecisionError(`<${element.id}> value ${JSON.stringify(value)} violates type constraint of ${itemDef.name}`, element);
   }
   return value;
 }
@@ -148,7 +149,7 @@ function coerceItemValue(value, itemDef, element, chain) {
     coerced = coerce(value, itemDef.typeRef, element, chain);
   } else if (itemDef.itemComponent?.length) {
     if (typeof value !== 'object' || Array.isArray(value)) {
-      throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to ${itemName(itemDef)}`, element);
+      throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to ${itemDef.name}`, element);
     }
     coerced = { ...value };
     for (const component of itemDef.itemComponent) {
@@ -160,12 +161,7 @@ function coerceItemValue(value, itemDef, element, chain) {
 
   const allowed = itemDef.allowedValues?.text;
   if (allowed && !element.environment.unaryTest(allowed, { '?': coerced })) {
-    throw new DecisionError(`<${element.id}> value ${JSON.stringify(coerced)} violates allowed values of ${itemName(itemDef)}`, element);
+    throw new DecisionError(`<${element.id}> value ${JSON.stringify(coerced)} violates allowed values of ${itemDef.name}`, element);
   }
   return coerced;
-}
-
-/** @internal */
-function itemName(itemDef) {
-  return itemDef.name || itemDef.id;
 }

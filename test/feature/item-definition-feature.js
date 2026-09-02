@@ -349,4 +349,76 @@ Feature('item definition types', () => {
       expect(result).to.equal('student');
     });
   });
+
+  Scenario('null values and singleton lists through a structured item definition', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="personDefinitions" name="Person" namespace="https://example.com/dmn/person">
+  <itemDefinition id="tTags" name="tTags" isCollection="true">
+    <typeRef>string</typeRef>
+    <allowedValues id="tTagsAllowed"><text>"red", "green"</text></allowedValues>
+  </itemDefinition>
+  <itemDefinition id="tPerson" name="tPerson">
+    <itemComponent id="tPersonName" name="name">
+      <typeRef>string</typeRef>
+      <allowedValues id="tPersonNameAllowed"><text>"Ann", "Bob"</text></allowedValues>
+    </itemComponent>
+    <itemComponent id="tPersonTags" name="tags">
+      <typeRef>tTags</typeRef>
+    </itemComponent>
+  </itemDefinition>
+  <inputData id="personInput" name="Person">
+    <variable id="personVariable" name="Person" typeRef="tPerson" />
+  </inputData>
+  <decision id="echo" name="Echo">
+    <variable id="echoVariable" name="Echo" />
+    <informationRequirement id="echoRequiresPerson">
+      <requiredInput href="#personInput" />
+    </informationRequirement>
+    <literalExpression id="echoExpression"><text>Person</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source where a person has a constrained name and a constrained tag collection', async () => {
+      definition = await getDefinition(source);
+    });
+
+    /** @type {any} */
+    let result;
+    When('the echo is evaluated with a null name and a null tag', async () => {
+      result = await definition.evaluate('echo', { Person: { name: null, tags: [null, 'red'] } });
+    });
+
+    Then('the nulls passed the allowed values untouched', () => {
+      expect(result).to.deep.equal({ name: null, tags: [null, 'red'] });
+    });
+
+    When('the echo is evaluated with a one-element list holding the person', async () => {
+      result = await definition.evaluate('echo', { Person: [{ name: 'Ann', tags: ['green'] }] });
+    });
+
+    Then('the list converted to its element', () => {
+      expect(result).to.deep.equal({ name: 'Ann', tags: ['green'] });
+    });
+
+    When('the echo is evaluated with a one-element list holding null', async () => {
+      result = await definition.evaluate('echo', { Person: [null] });
+    });
+
+    Then('the list converted to null', () => {
+      expect(result).to.be.null;
+    });
+
+    /** @type {any} */
+    let error;
+    When('the echo is evaluated with a one-element list holding a disallowed name', async () => {
+      error = await definition.evaluate('echo', { Person: [{ name: 'Cid' }] }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('the converted element was still validated', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/violates allowed values of name/);
+    });
+  });
 });

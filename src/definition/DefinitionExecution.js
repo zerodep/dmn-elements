@@ -103,8 +103,8 @@ DefinitionExecution.prototype._resolveServiceParts = function resolveServicePart
   const resolve = (refs, role) => {
     const resolved = [];
     for (const ref of refs || []) {
-      const target = ref?.href ? context.getDrgElementByHref(ref.href) : ref;
-      if (!target) return new DecisionError(`<${serviceDef.id}> ${role} ${ref?.href} was not found`, serviceDef);
+      const target = context.getDrgElementByHref(ref.href);
+      if (!target) return new DecisionError(`<${serviceDef.id}> ${role} ${ref.href} was not found`, serviceDef);
       resolved.push(target);
     }
     return resolved;
@@ -207,12 +207,9 @@ DefinitionExecution.prototype._resolveRequirements = function resolveRequirement
   const requirements = [...(drgElementDef.informationRequirement || []), ...(drgElementDef.knowledgeRequirement || [])];
 
   const bind = (importName, name, value) => {
-    if (!importName) {
-      input[name] = value;
-      return name;
-    }
-    input[importName] = { ...input[importName], [name]: value };
-    return `${importName}.${name}`;
+    if (!importName) input[name] = value;
+    else input[importName] = { ...input[importName], [name]: value };
+    return boundName(importName, name);
   };
 
   const next = (idx) => {
@@ -220,7 +217,7 @@ DefinitionExecution.prototype._resolveRequirements = function resolveRequirement
 
     const requirement = requirements[idx];
     const targetRef = requirement.requiredDecision || requirement.requiredInput || requirement.requiredKnowledge;
-    const resolved = targetRef?.href ? context.resolveDrgElementRef(targetRef.href) : targetRef && { elementDef: targetRef, context };
+    const resolved = targetRef && context.resolveDrgElementRef(targetRef.href);
     if (!resolved)
       return callback(new DecisionError(`<${drgElementDef.id}> requirement <${requirement.id}> target was not found`, drgElementDef));
 
@@ -252,7 +249,7 @@ DefinitionExecution.prototype._resolveRequirements = function resolveRequirement
             id: requirement.id,
             required: target.id,
             type: target.$type,
-            bound: importName ? `${importName}.${name}` : name,
+            bound: boundName(importName, name),
             value,
           });
           return next(idx + 1);
@@ -401,6 +398,11 @@ DefinitionExecution.prototype._bindService = function bindService(serviceDef, ca
   this.results.set(key, invocable);
   return callback(null, invocable);
 };
+
+/** @internal the name a value binds under — nested under the import name for imported elements */
+function boundName(importName, name) {
+  return importName ? `${importName}.${name}` : name;
+}
 
 function resultName(drgElementDef) {
   return drgElementDef.variable?.name || drgElementDef.name || drgElementDef.id;

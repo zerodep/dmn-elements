@@ -1,5 +1,6 @@
-import { DmnError, DecisionError } from '../error/Errors.js';
+import { DecisionError } from '../error/Errors.js';
 import { childExpressionValue } from './expressionValue.js';
+import { executeLogic } from './executeLogic.js';
 
 /**
  * Boxed quantified iteration — dmn:Some and dmn:Every as decision logic (DMN 1.4).
@@ -28,13 +29,7 @@ function BoxedQuantified(quantifiedDef, context) {
  * @param {(err: Error | null, result?: any) => void} callback
  */
 BoxedQuantified.prototype.execute = function execute(executeMessage, callback) {
-  let result;
-  try {
-    result = this.evaluate(executeMessage?.input);
-  } catch (err) {
-    return callback(err instanceof DmnError ? err : new DecisionError(/** @type {Error} */ (err).message, this, err));
-  }
-  return callback(null, result);
+  return executeLogic(this, executeMessage, callback);
 };
 
 /**

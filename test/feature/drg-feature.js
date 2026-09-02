@@ -322,4 +322,61 @@ Feature('decision requirement graph', () => {
       expect(result).to.be.null;
     });
   });
+
+  Scenario('input data without a variable or name falls back to element id', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="bareDefinitions" name="Bare" namespace="https://example.com/dmn/bare">
+  <inputData id="Color" />
+  <decision id="signal" name="Signal">
+    <informationRequirement id="signalRequiresColor">
+      <requiredInput href="#Color" />
+    </informationRequirement>
+    <literalExpression id="signalExpression"><text>if Color = "red" then "stop" else "go"</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source where input data has neither variable nor name', async () => {
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let traced;
+    When('the decision is traced with a value keyed by element id', async () => {
+      traced = await definition.trace('signal', { Color: 'red' });
+    });
+
+    Then('the input data value was resolved and bound under the id', () => {
+      expect(traced.result).to.equal('stop');
+      expect(traced.trace[0].requirements[0]).to.deep.include({ required: 'Color', bound: 'Color', value: 'red' });
+    });
+  });
+
+  Scenario('a requirement without a target', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="blankDefinitions" name="Blank" namespace="https://example.com/dmn/blank">
+  <decision id="dangling" name="Dangling">
+    <informationRequirement id="blankRequirement" />
+    <literalExpression id="danglingExpression"><text>1</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source with an information requirement that references nothing', async () => {
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let error;
+    When('the decision is evaluated', async () => {
+      error = await definition.evaluate('dangling', {}).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the missing target', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/requirement <blankRequirement> target was not found/);
+    });
+  });
 });

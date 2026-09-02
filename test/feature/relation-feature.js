@@ -278,4 +278,46 @@ Feature('relation decision logic', () => {
       expect(error.message).to.match(/unsupported relation cell expression dmn:UnaryTests/);
     });
   });
+
+  Scenario('relations without columns, rows, or cells', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="sparseDefinitions" name="Sparse" namespace="https://example.com/dmn/sparse">
+  <decision id="empty" name="Empty">
+    <variable id="emptyVariable" name="Empty" />
+    <relation id="emptyRelation" />
+  </decision>
+  <decision id="blankRow" name="Blank row">
+    <variable id="blankRowVariable" name="Blank row" />
+    <relation id="blankRowRelation">
+      <column id="levelColumn" name="level" />
+      <column id="feeColumn" name="fee" />
+      <row id="blank" />
+    </relation>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source with an empty relation and a relation with a cell-less row', async () => {
+      definition = await getDefinition(source);
+    });
+
+    /** @type {any} */
+    let result;
+    When('the empty relation is evaluated', async () => {
+      result = await definition.evaluate('empty', {});
+    });
+
+    Then('the result is an empty list', () => {
+      expect(result).to.deep.equal([]);
+    });
+
+    When('the relation with a cell-less row is evaluated', async () => {
+      result = await definition.evaluate('blankRow', {});
+    });
+
+    Then('the row binds null for every column', () => {
+      expect(result).to.deep.equal([{ level: null, fee: null }]);
+    });
+  });
 });

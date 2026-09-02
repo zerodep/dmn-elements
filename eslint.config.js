@@ -76,7 +76,6 @@ export default [
     languageOptions: {
       parserOptions: {
         sourceType: 'module',
-        // 2025 for import attributes (JSON import in src/dmnModdle.js)
         ecmaVersion: 2025,
       },
       globals: {

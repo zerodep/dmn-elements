@@ -1,4 +1,4 @@
-import { DmnError, DecisionError } from '../error/Errors.js';
+import { executeLogic } from './executeLogic.js';
 
 /**
  * Literal expression evaluation — a single FEEL expression as decision logic
@@ -21,13 +21,7 @@ export function LiteralExpression(literalExpressionDef, context) {
  * @param {(err: Error | null, result?: any) => void} callback
  */
 LiteralExpression.prototype.execute = function execute(executeMessage, callback) {
-  let result;
-  try {
-    result = this.evaluate(executeMessage?.input);
-  } catch (err) {
-    return callback(err instanceof DmnError ? err : new DecisionError(/** @type {Error} */ (err).message, this, err));
-  }
-  return callback(null, result);
+  return executeLogic(this, executeMessage, callback);
 };
 
 /**

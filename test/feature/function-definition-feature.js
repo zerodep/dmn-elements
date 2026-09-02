@@ -228,4 +228,40 @@ Feature('function definition decision logic', () => {
       expect(error.message).to.match(/unsupported function body expression dmn:UnaryTests/);
     });
   });
+
+  Scenario('a function definition without parameters', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="thunkDefinitions" name="Thunk" namespace="https://example.com/dmn/thunk">
+  <decision id="thunk" name="Thunk">
+    <variable id="thunkVariable" name="Thunk" />
+    <context id="thunkContext">
+      <contextEntry id="answerEntry">
+        <variable id="answerVariable" name="Answer" />
+        <functionDefinition id="answerFunction">
+          <literalExpression id="answerBody"><text>42</text></literalExpression>
+        </functionDefinition>
+      </contextEntry>
+      <contextEntry id="resultEntry">
+        <literalExpression id="resultExpression"><text>Answer()</text></literalExpression>
+      </contextEntry>
+    </context>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source where a context entry defines a parameterless function', async () => {
+      definition = await getDefinition(source);
+    });
+
+    /** @type {any} */
+    let result;
+    When('the decision is evaluated', async () => {
+      result = await definition.evaluate('thunk', {});
+    });
+
+    Then('the final result entry invoked the function without arguments', () => {
+      expect(result).to.equal(42);
+    });
+  });
 });

@@ -160,6 +160,17 @@ describe('Environment', () => {
       expect(await /** @type {Function} */ (environment.clone().getServiceByName('fetchScore'))(5000), 'cloned environment').to.equal(700);
     });
 
+    it('a non-function service value is exposed as is', () => {
+      const environment = new Environment({ services: /** @type {any} */ ({ threshold: 10 }) });
+      expect(environment.resolveExpression('services.threshold')).to.equal(10);
+    });
+
+    it('a rest-args service declares its parameters through $args for named-argument invocation', () => {
+      const subtract = Object.assign((/** @type {number[]} */ ...args) => args[0] - args[1], { $args: ['minuend', 'subtrahend'] });
+      const environment = new Environment({ services: { subtract } });
+      expect(environment.resolveExpression('services.subtract(subtrahend: 1, minuend: 5)')).to.equal(4);
+    });
+
     it('a variable named services shadows the services overlay', () => {
       const environment = new Environment({
         services: { rate: () => 1 },

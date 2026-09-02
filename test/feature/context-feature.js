@@ -223,4 +223,30 @@ Feature('context decision logic', () => {
       expect(error.message).to.match(/unsupported context entry expression dmn:UnaryTests/);
     });
   });
+
+  Scenario('a boxed context without entries', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="voidDefinitions" name="Void" namespace="https://example.com/dmn/void">
+  <decision id="void" name="Void">
+    <variable id="voidVariable" name="Void" />
+    <context id="voidContext" />
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from an inline source with an empty context', async () => {
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let result;
+    When('the decision is evaluated', async () => {
+      result = await definition.evaluate('void', {});
+    });
+
+    Then('the result is an empty context', () => {
+      expect(result).to.deep.equal({});
+    });
+  });
 });
