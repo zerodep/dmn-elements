@@ -53,7 +53,7 @@ dmn-elements:dmn:definitions <fee> completed
 
 ## DMN conformance
 
-Checked against the [DMN TCK](https://github.com/dmn-tck/tck) (August 2026):
+Checked against the [DMN TCK](https://github.com/dmn-tck/tck) (September 2026):
 
 - **Compliance level 2: 100%** (126/126 assertions)
 - Compliance level 3: 84.7% (2852/3369)

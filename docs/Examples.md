@@ -2,6 +2,17 @@
 
 Runnable examples, verified with [texample](https://www.npmjs.com/package/texample) (`npm run test:md`).
 
+<!-- toc -->
+
+- [Evaluate a decision table](#evaluate-a-decision-table)
+- [Invoke a business knowledge model](#invoke-a-business-knowledge-model)
+- [Environment variables](#environment-variables)
+- [Call a service](#call-a-service)
+- [Trace an evaluation](#trace-an-evaluation)
+- [Node style callbacks](#node-style-callbacks)
+
+<!-- /toc -->
+
 ## Evaluate a decision table
 
 Parse DMN XML with dmn-moddle, wrap the definitions in a context, and evaluate a decision:

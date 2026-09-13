@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- generate table of contents with [@0dep/toc](https://0dep.se/toc/)
+
 ## v0.2.0 - 2026-09-02
 
 ### Changed

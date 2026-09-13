@@ -18,7 +18,7 @@ Runnable examples in this document are verified with [texample](https://www.npmj
 - [Precompiled definitions](#precompiled-definitions)
 - [DMN 1.4 boxed expressions](#dmn-14-boxed-expressions)
 
-<!-- tocstop -->
+<!-- /toc -->
 
 ## Definition
 

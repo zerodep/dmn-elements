@@ -23,8 +23,10 @@
   "sideEffects": false,
   "scripts": {
     "test": "mocha -R @bonniernews/hot-bev -p -t 3000",
-    "posttest": "npm run lint && npm run test:md && npm run typecheck",
+    "posttest": "npm run lint && npm run test:md && npm run typecheck && npm run toc",
     "test:md": "texample ./docs/Examples.md,./docs/API.md,./README.md",
+    "toc": "toc docs/API.md docs/Examples.md",
+    "posttoc": "prettier --write docs/API.md docs/Examples.md",
     "lint": "eslint . --cache && prettier . --check --cache",
     "pretypecheck": "npm run build:types",
     "typecheck": "tsc --noEmit && tsc -p test/tsconfig.json",
@@ -76,6 +78,7 @@
     }
   },
   "devDependencies": {
+    "@0dep/toc": "^1.0.1",
     "@bonniernews/hot-bev": "^0.4.0",
     "@eslint/js": "^10.0.1",
     "@types/chai": "^5.2.3",
