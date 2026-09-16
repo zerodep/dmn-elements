@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+## v0.2.1 - 2026-09-16
+
 - generate table of contents with [@0dep/toc](https://0dep.se/toc/)
+- set trailing slash on package homepage
 
 ## v0.2.0 - 2026-09-02
 

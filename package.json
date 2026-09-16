@@ -1,6 +1,6 @@
 {
   "name": "dmn-elements",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Executable decision elements based on DMN 1.3, 1.4 and 1.5",
   "type": "module",
   "main": "./src/index.js",
@@ -37,14 +37,14 @@
     "test:tck": "node scripts/tck/run.js"
   },
   "author": {
-    "name": "Pål Edman",
-    "url": "https://0dep.se/about"
+    "name": "Zeropep AB",
+    "url": "https://0dep.se"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zerodep/dmn-elements.git"
   },
-  "homepage": "https://0dep.se/dmn",
+  "homepage": "https://0dep.se/dmn/",
   "license": "MIT",
   "keywords": [
     "dmn",
@@ -61,7 +61,8 @@
   "files": [
     "src",
     "types",
-    "*.d.ts"
+    "*.d.ts",
+    "CHANGELOG.md"
   ],
   "c8": {
     "include": [
