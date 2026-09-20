@@ -11,7 +11,7 @@ The isomorphic "DMN XML in, decision result out" engine category is abandonware 
 
 But the layers underneath are alive and maintained by the bpmn-io/nikku (Camunda-adjacent) ecosystem:
 
-- **feelin** 7.x — actively developed FEEL parser/interpreter, tested against the DMN TCK. The only runtime dependency, declared as a **peerDependency** (author decision 2026-07-10) so the host controls the feelin version and dedupes with its own feelin usage; npm ≥ 7 auto-installs it.
+- **feelin** 8.x — actively developed FEEL parser/interpreter, tested against the DMN TCK. The only runtime dependency, declared as a **peerDependency** (author decision 2026-07-10) so the host controls the feelin version and dedupes with its own feelin usage; npm ≥ 7 auto-installs it.
 - **dmn-moddle** 12.x — DMN 1.3 read/write model layer (moddle 8), sibling of bpmn-moddle. Dev dependency; the host parses.
 
 So the only thing worth building — and the only thing this project owns — is the **execution/orchestration layer**: walking the DRG and running decision logic against evaluated FEEL. Parsing (dmn-moddle) and FEEL semantics (feelin) stay upstream. The npm name `dmn-elements` was unclaimed as of 2026-07-08.
@@ -38,13 +38,13 @@ DMN evaluation is a pure function of its inputs: FEEL is side-effect-free, and D
 
 ## Upstream API gotchas (verified)
 
-- **feelin ≥ 7 returns `{ value, warnings }`** from both `evaluate()` and `unaryTest()` — unwrap `.value` (src/Expressions.js). Unary tests take the tested value on context key `?`.
+- **feelin returns `{ value, warnings }`** (since 7) from both `evaluate()` and `unaryTest()` — unwrap `.value` (src/Expressions.js). Unary tests take the tested value on context key `?`.
 - **feelin supports named arguments and parameter-count checks for host functions via `fn.$args`** (an array of parameter names — without it feelin source-parses the JS signature, so a `(...args)` invocable reads as var-args). All invocables (BKM, decision service, function definition) carry `$args`; surplus positional arguments then make the FEEL invocation yield null.
 - **dmn-moddle keeps DRG edges as unresolved `DMNElementReference` hrefs** (`#elementId`) — `Context.getRequirements` resolves them against the definitions tree.
 - **dmn-moddle exports named `DmnModdle`**, not default: `import { DmnModdle } from 'dmn-moddle'`.
 - DMN 1.3 namespace: `https://www.omg.org/spec/DMN/20191111/MODEL/` (see test/resources/dinner.dmn).
 - **Test resources must include DMNDI** (`dmndi:DMNDiagram` with `DMNShape` per DRG element and `DMNEdge` per requirement) so the diagrams open in Camunda Modeler / dmn-js. Defaults: decision shape 180×80, input data 125×45; edge `dmnElementRef` points at the requirement id. dinner.dmn is the template.
-- **feelin drags in luxon** (~70 kB min / ~23 kB gzip in a browser bundle; no tz data shipped — uses platform Intl) because FEEL's temporal types (`date`, `time`, `date and time`, both duration kinds) mandate calendar/zone-aware semantics. Imported top-level by feelin's builtins, so it never tree-shakes away even if models are date-free. Author dislikes the weight; escape hatch is the pluggable `Environment` `expressions` seam (slimmer FEEL subset engine); watch feelin for a native Temporal migration upstream.
+- **feelin 8 moved temporals from luxon to `temporal-polyfill`** (author upgrade 2026-09-20, peer pinned `^8.0.0`): FEEL temporal values are feelin's own `FeelDate`/`FeelTime`/`FeelDateTime`/`FeelDuration` wrappers (`unwrap()` yields the Temporal value), so decision results carry those, not luxon objects. Nothing in this layer touches the types — typeRef coercion goes through `resolveExpression(`date(raw)`)` and stays engine-agnostic, and `now()`/`today()` still follow a chronokinesis-mocked Date. The polyfill is imported top-level by feelin's builtins like luxon was, so it never tree-shakes away; the escape hatch remains the pluggable `Environment` `expressions` seam. Watch upstream for a native `Temporal` switch once engines ship it.
 
 ## Build & tooling decisions
 
@@ -160,4 +160,4 @@ DMN evaluation is a pure function of its inputs: FEEL is side-effect-free, and D
   - Degenerate-model leniency pinned by tests: empty boxed context → `{}`, empty relation → `[]`, cell-less relation row → nulls, parameterless function definition and binding-less invocation work, table without inputs matches unconditionally, input column without expression contributes null, empty output entry → null, nameless output column keyed by id, input data with neither variable nor name binds by id.
   - The one branch left uncovered on purpose: the decision-service **sync-completion guard** in `_bindService` — unreachable until an async seam exists, kept as the documented safety net.
 - Not supported yet: strict parameter typing on invocation (deliberately lenient), `dmn:UnaryTests` as standalone expression (nonsensical; it is the unsupported-expression trigger in tests), invocation-level BKM tracing, service completeness validation, `functionItem` on item definitions, external function kinds (Java/PMML).
-- Next candidates: none queued — the remaining TCK gap is upstream feelin FEEL semantics; watch upstream releases and re-run the sweep. TCK standing after DMN 1.4 boxed expressions: overall 85.2% (2978/3495), CL2 100%. Re-checked 2026-09-13 against TCK master 321c4fe (no TestCases changes since the 2026-08-03 clone, only a Java runner pom bump) with feelin 7.0.1 / dmn-moddle 12.1.0 still latest — REPORT.md byte-identical.
+- Next candidates: none queued — the remaining TCK gap is upstream feelin FEEL semantics; watch upstream releases and re-run the sweep. TCK standing after the feelin 8 upgrade (2026-09-20, feelin 8.1.0 / dmn-moddle 12.1.0, TCK master 321c4fe): overall 89.0% (3110/3495), CL3 88.6%, CL2 100% — up from 85.2% on feelin 7 with zero engine changes (`instance of` 40→133/142, `abs` of durations, `at` literals, `now`/`today`, temporal constructors); small upstream regressions in 0100-arithmetic (889→878, "not implemented: negative date") and 0068 range equality. Errors dropped 201→71.

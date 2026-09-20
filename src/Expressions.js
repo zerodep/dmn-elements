@@ -17,7 +17,7 @@ export function Expressions() {
  * @returns {any} evaluation result
  */
 Expressions.prototype.resolveExpression = function resolveExpression(expression, context) {
-  // feelin >= 7 returns { value, warnings }
+  // feelin returns { value, warnings }
   return evaluate(expression, context).value;
 };
 

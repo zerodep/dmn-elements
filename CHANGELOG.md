@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## v0.3.0 - 2026-09-20
+
+### Breaking
+
+- Requires [feelin](https://github.com/nikku/feelin) 8 as peer dependency — temporal values in decision results are feelin's own `FeelDate`, `FeelTime`, `FeelDateTime` and `FeelDuration` types instead of luxon objects, and feelin 8 rejects week durations and mixed-kind duration arithmetic
+
+### Changed
+
+- DMN TCK conformance rises to 89.0% (3110/3495 assertions) on feelin 8, up from 85.2% — `instance of`, `at` literals, `now()`/`today()`, and the temporal constructor functions now pass
 
 ## v0.2.1 - 2026-09-16
 
