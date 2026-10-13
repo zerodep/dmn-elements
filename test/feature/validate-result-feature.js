@@ -113,6 +113,134 @@ Feature('decision result validation', () => {
     });
   });
 
+  Scenario('invocable results validated against the function item output type', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="scoresDefinitions" name="Scores" namespace="https://example.com/dmn/scores">
+  <itemDefinition id="tScores" name="tScores" isCollection="true">
+    <typeRef>number</typeRef>
+  </itemDefinition>
+  <itemDefinition id="fnScores" name="fnScores">
+    <functionItem id="fnScoresItem" outputTypeRef="tScores" />
+  </itemDefinition>
+  <itemDefinition id="fnNumber" name="fnNumber">
+    <functionItem id="fnNumberItem" outputTypeRef="number" />
+  </itemDefinition>
+  <businessKnowledgeModel id="seven" name="Seven">
+    <variable id="sevenVariable" name="Seven" typeRef="fnScores" />
+    <encapsulatedLogic id="sevenLogic" kind="FEEL">
+      <literalExpression id="sevenExpression"><text>7</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <businessKnowledgeModel id="plainSeven" name="Plain seven">
+    <variable id="plainSevenVariable" name="Plain seven" typeRef="tScores" />
+    <encapsulatedLogic id="plainSevenLogic" kind="FEEL">
+      <literalExpression id="plainSevenExpression"><text>7</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <businessKnowledgeModel id="word" name="Word">
+    <variable id="wordVariable" name="Word" typeRef="fnNumber" />
+    <encapsulatedLogic id="wordLogic" kind="FEEL">
+      <literalExpression id="wordExpression"><text>"abc"</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+  <decisionService id="scoresService" name="Scores service">
+    <variable id="scoresServiceVariable" name="Scores service" typeRef="fnScores" />
+    <outputDecision href="#body" />
+  </decisionService>
+  <decisionService id="wordService" name="Word service">
+    <variable id="wordServiceVariable" name="Word service" typeRef="fnNumber" />
+    <outputDecision href="#wordBody" />
+  </decisionService>
+  <decision id="body" name="Body">
+    <variable id="bodyVariable" name="Body" />
+    <literalExpression id="bodyExpression"><text>7</text></literalExpression>
+  </decision>
+  <decision id="wordBody" name="Word body">
+    <variable id="wordBodyVariable" name="Word body" />
+    <literalExpression id="wordBodyExpression"><text>"abc"</text></literalExpression>
+  </decision>
+  <decision id="viaFeel" name="Via FEEL">
+    <variable id="viaFeelVariable" name="Via FEEL" />
+    <knowledgeRequirement id="viaFeelRequiresService">
+      <requiredKnowledge href="#scoresService" />
+    </knowledgeRequirement>
+    <literalExpression id="viaFeelExpression"><text>Scores service()</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition with invocables typed by function item definitions, with the validateResult setting', async () => {
+      definition = await getDefinition(source, { settings: { validateResult: true } });
+    });
+
+    /** @type {any} */
+    let result;
+    When('the business knowledge model returning a scalar is evaluated directly', async () => {
+      result = await definition.evaluate('seven', {});
+    });
+
+    Then('the result widened to the declared output collection', () => {
+      expect(result).to.deep.equal([7]);
+    });
+
+    When('the decision service returning a scalar is evaluated directly', async () => {
+      result = await definition.evaluate('scoresService', {});
+    });
+
+    Then('the service result widened to the declared output collection', () => {
+      expect(result).to.deep.equal([7]);
+    });
+
+    When('a decision invokes the decision service from FEEL', async () => {
+      result = await definition.evaluate('viaFeel', {});
+    });
+
+    Then('the invocation result widened as well', () => {
+      expect(result).to.deep.equal([7]);
+    });
+
+    When('a business knowledge model whose variable type is no function item is evaluated', async () => {
+      result = await definition.evaluate('plainSeven', {});
+    });
+
+    Then('the result passed through untouched', () => {
+      expect(result).to.equal(7);
+    });
+
+    /** @type {any} */
+    let error;
+    When('a business knowledge model returning a value outside its output type is evaluated', async () => {
+      error = await definition.evaluate('word', {}).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the failed coercion', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/cannot coerce "abc" to number/);
+    });
+
+    When('a decision service returning a value outside its output type is evaluated', async () => {
+      error = await definition.evaluate('wordService', {}).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the failed service result coercion', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/cannot coerce "abc" to number/);
+    });
+
+    Given('the same definition without the setting', async () => {
+      definition = await getDefinition(source);
+    });
+
+    When('the business knowledge model returning a scalar is evaluated directly', async () => {
+      result = await definition.evaluate('seven', {});
+    });
+
+    Then('the scalar passed through', () => {
+      expect(result).to.equal(7);
+    });
+  });
+
   Scenario('a failing decision with result validation', () => {
     /** @type {Definition} */
     let definition;

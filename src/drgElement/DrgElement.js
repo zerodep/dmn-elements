@@ -1,5 +1,5 @@
 /**
- * Generic DRG element wrapper — the activity/Activity.js analogue.
+ * Generic DRG element wrapper.
  *
  * Element factories pair this wrapper with an element-specific Behaviour that
  * implements `execute(executeMessage, callback)`.
@@ -27,8 +27,7 @@ export function DrgElement(Behaviour, elementDef, context) {
 }
 
 /**
- * Evaluate element — mints a Behaviour instance and executes it, running any
- * extension hooks around the execution
+ * Evaluate the element, running extension hooks around its behaviour
  * @param {any} executeMessage requirements output and evaluation input
  * @param {(err: Error | null, result?: any) => void} callback
  */

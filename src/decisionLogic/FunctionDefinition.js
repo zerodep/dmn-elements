@@ -6,10 +6,8 @@ import { executeLogic } from './executeLogic.js';
 /**
  * Boxed function definition evaluation — dmn:FunctionDefinition as decision logic.
  *
- * Evaluates to a FEEL-invocable function. Unlike a business knowledge model,
- * whose scope is closed to formal parameters and required knowledge, an inline
- * function definition is a closure over its definition scope, per FEEL function
- * semantics — e.g. earlier entries of the boxed context defining it.
+ * Evaluates to a FEEL-invocable function closing over its definition scope, e.g.
+ * earlier entries of the boxed context defining it.
  * @param {any} functionDef dmn-moddle function definition
  * @param {import('../Context.js').Context} context
  */

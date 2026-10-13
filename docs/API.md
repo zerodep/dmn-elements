@@ -41,7 +41,7 @@ const definition = new Definition(new Context(rootElement, new Environment()));
 
 Evaluate a decision and, recursively, its required decisions. Requirements bind under each element's variable name: required decisions evaluate first (memoized per run), input data values pull from `input`, and business knowledge models and decision services bind as FEEL-invocable functions.
 
-- `decisionId`: id of a `dmn:Decision` — or a `dmn:DecisionService`, whose input decision values must then be provided in `input` bound by variable name
+- `decisionId`: id of a `dmn:Decision` — or a `dmn:DecisionService`, whose input decision values must then be provided in `input` bound by variable name — or a `dmn:BusinessKnowledgeModel`, whose formal parameters are bound from `input` by name
 - `input`: input data values by variable name, merged over environment variables
 - `callback`: optional node style callback `(err, result)` — without it a promise is returned
 
@@ -124,7 +124,7 @@ Extensions read `$attrs` for vendor attributes unknown to dmn-moddle. To parse a
 
 ## Settings
 
-Settings are plain values on `environment.settings`.
+Settings are plain values on `environment.settings`. The three settings below are declared on the `settings` option type with their signatures (`EnvironmentSettings` in the generated declarations); other keys stay open for host use.
 
 ### `types`
 
@@ -174,7 +174,7 @@ console.log(await definition.evaluate('grade', { Score: '85 pts' }));
 
 ### `validateResult`
 
-Off by default. When true, every decision result is coerced and validated against the decision variable's typeRef before the decision completes — a result outside an item definition's allowed values, or violating its DMN 1.5 `typeConstraint`, fails the evaluation instead of flowing downstream.
+Off by default. When true, every decision result is coerced and validated against the decision variable's typeRef before the decision completes — a result outside an item definition's allowed values, or violating its DMN 1.5 `typeConstraint`, fails the evaluation instead of flowing downstream. Business knowledge model and decision service results are likewise coerced to the output type their variable declares through an item definition's `functionItem`, whether invoked directly or from FEEL.
 
 ```javascript
 import { DmnModdle } from 'dmn-moddle';

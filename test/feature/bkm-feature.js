@@ -77,6 +77,116 @@ Feature('business knowledge model', () => {
     });
   });
 
+  Scenario('a business knowledge model evaluated directly', () => {
+    /** @type {Definition} */
+    let definition;
+    Given('a definition from the discount resource', async () => {
+      definition = new Definition(await testHelpers.context(testHelpers.resource('discount.dmn')));
+    });
+
+    /** @type {any} */
+    let result;
+    When('the business knowledge model is evaluated with its parameters bound by name', async () => {
+      result = await definition.evaluate('applyDiscount', { amount: 100, rate: 0.1 });
+    });
+
+    Then('the result is the invocation result', () => {
+      expect(result).to.equal(90);
+    });
+
+    When('the business knowledge model is evaluated without one of its parameters', async () => {
+      result = await definition.evaluate('applyDiscount', { amount: 100 });
+    });
+
+    Then('the missing parameter is null per FEEL semantics', () => {
+      expect(result).to.be.null;
+    });
+  });
+
+  Scenario('a business knowledge model evaluated directly with failing parameter coercion', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="rateDefinitions" name="Rate" namespace="https://example.com/dmn/rate">
+  <itemDefinition id="tRate" name="tRate">
+    <typeRef>number</typeRef>
+    <allowedValues id="rateValues"><text>[0..1]</text></allowedValues>
+  </itemDefinition>
+  <businessKnowledgeModel id="applyRate" name="Apply rate">
+    <variable id="applyRateVariable" name="Apply rate" />
+    <encapsulatedLogic id="applyRateLogic" kind="FEEL">
+      <formalParameter id="rateParameter" name="rate" typeRef="tRate" />
+      <literalExpression id="applyRateExpression"><text>100 * rate</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition with a business knowledge model whose parameter has allowed values', async () => {
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let error;
+    When('the business knowledge model is evaluated with a value outside the allowed values', async () => {
+      error = await definition.evaluate('applyRate', { rate: 2 }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the allowed values violation', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/violates allowed values of tRate/);
+    });
+
+    Given('the same definition with a type override throwing a plain error', async () => {
+      definition = new Definition(
+        await testHelpers.context(source, {
+          settings: {
+            types: {
+              tRate() {
+                throw new Error('rate service down');
+              },
+            },
+          },
+        })
+      );
+    });
+
+    When('the business knowledge model is evaluated', async () => {
+      error = await definition.evaluate('applyRate', { rate: 0.5 }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('the plain error surfaces as a decision error with the original as cause', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.equal('rate service down');
+      expect(error.cause).to.be.instanceof(Error);
+    });
+  });
+
+  Scenario('a business knowledge model without logic evaluated directly', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="emptyDefinitions" name="Empty" namespace="https://example.com/dmn/empty">
+  <businessKnowledgeModel id="empty" name="Empty">
+    <variable id="emptyVariable" name="Empty" />
+  </businessKnowledgeModel>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition with a business knowledge model lacking encapsulated logic', async () => {
+      definition = new Definition(await testHelpers.context(source));
+    });
+
+    /** @type {any} */
+    let error;
+    When('the business knowledge model is evaluated directly', async () => {
+      error = await definition.evaluate('empty', {}).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the missing logic', () => {
+      expect(error).to.be.instanceof(DecisionError);
+      expect(error.message).to.match(/has no encapsulated logic/);
+    });
+  });
+
   Scenario('a business knowledge model invoked with named arguments', () => {
     const source = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="namedDefinitions" name="Named" namespace="https://example.com/dmn/named">

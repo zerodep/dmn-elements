@@ -6,10 +6,7 @@ import { DummyLogger } from './DummyLogger.js';
  *
  * Pluggable via Environment option `expressions`. A replacement must implement
  * `resolveExpression(expression, context)` and `unaryTest(test, context)`.
- *
- * feelin reports evaluation warnings (unknown variables and context keys, missing
- * functions, invalid built-in arguments) alongside the value — FEEL yields null in
- * these cases without an error, so they are logged at `warn` level
+ * Evaluation warnings reported by feelin are logged at `warn` level.
  * @param {import('#types').ILogger} [logger] receives feelin warnings, silent by default
  */
 export function Expressions(logger) {

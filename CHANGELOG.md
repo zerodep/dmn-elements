@@ -4,6 +4,9 @@
 
 ### Added
 
+- The `settings` environment option is typed: `validateResult`, `types`, and `resolveImport` are declared with their signatures and descriptions, other keys stay open
+- A business knowledge model evaluates directly through `definition.evaluate(bkmId, input)`, its formal parameters bound from `input` by name, yielding the invocation result (DMN TCK 1157)
+- Under `validateResult`, business knowledge model and decision service results are coerced to the output type their variable declares through an item definition `functionItem`, whether invoked directly or from FEEL (DMN TCK 1157)
 - FEEL evaluation warnings reported by feelin — unknown variables and context keys, missing functions, invalid built-in arguments — are logged through the `Logger` environment option at `warn` level under the `feel` scope; FEEL yields null in these cases without an error, so a mistyped service or variable name is now visible under `DEBUG` — a `Logger` passed through `Definition` options receives them too
 
 ### Changed

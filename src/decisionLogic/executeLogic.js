@@ -1,9 +1,8 @@
 import { DmnError, DecisionError } from '../error/Errors.js';
 
 /**
- * Run decision logic through the callback seam — the synchronous evaluate result
- * or an error. Errors raised by host code (a service, a type override) are wrapped
- * in a DecisionError sourced at the logic, with the original error as cause
+ * Execute decision logic through the callback seam, reporting any failure as a
+ * DecisionError sourced at the logic
  * @param {{ id?: string, type?: string, evaluate(input?: Record<string, any>, trace?: any): any }} logic decision logic instance
  * @param {{ input?: Record<string, any>, trace?: any }} executeMessage evaluation input context, and the trace entry when traced
  * @param {(err: Error | null, result?: any) => void} callback

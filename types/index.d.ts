@@ -1,21 +1,15 @@
 declare module 'dmn-elements' {
 	/**
-	 * Per-evaluation element registry and lazy factory.
-	 *
-	 * Consumes a dmn-moddle definitions tree directly — there is no serializer step as in
-	 * bpmn-elements, since stateless evaluation never needs to round-trip run state.
-	 * The host parses XML with dmn-moddle and passes the root `dmn:Definitions` element.
+	 * Element registry over a dmn-moddle definitions tree — the host parses the XML and
+	 * passes the root `dmn:Definitions` element; runtime elements are minted on demand.
 	 * @param definitions dmn-moddle definitions (root element from `DmnModdle#fromXML`)
 	 * 
 	 */
 	export function Context(definitions: any, environment?: Environment): Context;
 	export class Context {
 		/**
-		 * Per-evaluation element registry and lazy factory.
-		 *
-		 * Consumes a dmn-moddle definitions tree directly — there is no serializer step as in
-		 * bpmn-elements, since stateless evaluation never needs to round-trip run state.
-		 * The host parses XML with dmn-moddle and passes the root `dmn:Definitions` element.
+		 * Element registry over a dmn-moddle definitions tree — the host parses the XML and
+		 * passes the root `dmn:Definitions` element; runtime elements are minted on demand.
 		 * @param definitions dmn-moddle definitions (root element from `DmnModdle#fromXML`)
 		 * 
 		 */
@@ -73,14 +67,13 @@ declare module 'dmn-elements' {
 			context: Context;
 		} | undefined;
 		/**
-		 * Resolve declared imports through the `resolveImport` environment setting —
-		 * `resolveImport(importDef)` returns the imported model's parsed dmn-moddle
-		 * definitions, or a promise thereof (the host parses; dmn-moddle is async).
-		 * Recursive imports resolve once per namespace, cycles bind to the loaded model.
+		 * Resolve declared imports through the `resolveImport` environment setting, which
+		 * returns the imported model's parsed definitions or a promise thereof. Nested imports
+		 * resolve once per namespace.
 		 *
 		 * Definition#evaluate and #trace await this before each run; call it directly when
-		 * using the context synchronously. Without the setting, loading is skipped and a
-		 * reference to an imported type fails the evaluation instead.
+		 * using the context synchronously. Without the setting, a reference to an imported
+		 * type fails the evaluation instead.
 		 * @param seen resolved contexts by namespace
 		 * @returns undefined when there is nothing to load
 		 */
@@ -98,10 +91,9 @@ declare module 'dmn-elements' {
 		 * */
 		getElementById(id: string): DrgElement | undefined;
 		/**
-		 * Load registered environment extensions for a DRG element — runs when the element
-		 * is minted. Each extension factory is called with the element and this context and
-		 * may decorate the element; returned activate/deactivate hooks run around each
-		 * evaluation (see docs/API.md)
+		 * Load registered environment extensions for a DRG element. Each extension factory
+		 * is called with the element and this context and may decorate the element; returned
+		 * activate/deactivate hooks run around each evaluation
 		 * @returns undefined when no extension returned hooks
 		 */
 		loadExtensions(element: DrgElement): Extensions | undefined;
@@ -134,18 +126,12 @@ declare module 'dmn-elements' {
 	}
 	/**
 	 * Shared evaluation environment: variables, services, settings, and the FEEL engine.
-	 *
-	 * Mirrors bpmn-elements Environment, minus scripts and timers — DMN evaluation is
-	 * expression-only and has no waiting semantics.
 	 * 
 	 */
 	export function Environment(options?: EnvironmentOptions): Environment;
 	export class Environment {
 		/**
 		 * Shared evaluation environment: variables, services, settings, and the FEEL engine.
-		 *
-		 * Mirrors bpmn-elements Environment, minus scripts and timers — DMN evaluation is
-		 * expression-only and has no waiting semantics.
 		 * 
 		 */
 		constructor(options?: EnvironmentOptions);
@@ -156,7 +142,7 @@ declare module 'dmn-elements' {
 		
 		output: Record<string, any>;
 		
-		settings: Record<string, any>;
+		settings: EnvironmentSettings;
 		
 		Logger: (scope: string) => ILogger;
 		
@@ -164,6 +150,20 @@ declare module 'dmn-elements' {
 		getState(): {
 			settings: {
 				[x: string]: any;
+				validateResult?: boolean;
+				types?: Record<string, (value: any, typeRef: string, element: {
+					id?: string;
+					type?: string;
+					environment: any;
+					context?: any;
+				}) => any>;
+				resolveImport?: (importDef: {
+					name: string;
+					namespace: string;
+					locationURI?: string;
+					importType?: string;
+					[x: string]: any;
+				}) => any;
 			};
 			variables: {
 				[x: string]: any;
@@ -178,15 +178,15 @@ declare module 'dmn-elements' {
 		 */
 		recover(state?: ReturnType<Environment["getState"]>): this;
 		/**
-		 * Clone environment, sharing services and a host-provided expressions engine, resetting output —
-		 * a default engine is rebuilt so it logs through the clone's Logger
+		 * Clone environment: override options take precedence, services and a host-provided
+		 * expressions engine are shared, output starts empty
 		 * @param overrideOptions take precedence over current
 		 * */
 		clone(overrideOptions?: EnvironmentOptions): Environment;
 		/** @param newVars merged over current variables */
 		assignVariables(newVars: Record<string, any>): void;
 		/** @param newSettings merged over current settings */
-		assignSettings(newSettings: Record<string, any>): this;
+		assignSettings(newSettings: EnvironmentSettings): this;
 		
 		getServiceByName(name: string): Function | undefined;
 		
@@ -218,10 +218,7 @@ declare module 'dmn-elements' {
 	 *
 	 * Pluggable via Environment option `expressions`. A replacement must implement
 	 * `resolveExpression(expression, context)` and `unaryTest(test, context)`.
-	 *
-	 * feelin reports evaluation warnings (unknown variables and context keys, missing
-	 * functions, invalid built-in arguments) alongside the value — FEEL yields null in
-	 * these cases without an error, so they are logged at `warn` level
+	 * Evaluation warnings reported by feelin are logged at `warn` level.
 	 * @param logger receives feelin warnings, silent by default
 	 */
 	export function Expressions(logger?: ILogger): Expressions;
@@ -231,10 +228,7 @@ declare module 'dmn-elements' {
 		 *
 		 * Pluggable via Environment option `expressions`. A replacement must implement
 		 * `resolveExpression(expression, context)` and `unaryTest(test, context)`.
-		 *
-		 * feelin reports evaluation warnings (unknown variables and context keys, missing
-		 * functions, invalid built-in arguments) alongside the value — FEEL yields null in
-		 * these cases without an error, so they are logged at `warn` level
+		 * Evaluation warnings reported by feelin are logged at `warn` level.
 		 * @param logger receives feelin warnings, silent by default
 		 */
 		constructor(logger?: ILogger);
@@ -284,29 +278,20 @@ declare module 'dmn-elements' {
 		
 		type: string;
 		/**
-		 * Evaluate a decision and, recursively, its required decisions.
-		 *
-		 * Evaluation is stateless and completes in one callback chain — DMN has no waiting
-		 * semantics. The callback shape exists to allow async host services at element
-		 * boundaries, not to persist or resume runs.
+		 * Evaluate a decision and, recursively, its required decisions. The id of a decision
+		 * service or business knowledge model evaluates that invocable instead.
 		 * 
 		 */
 		evaluate(decisionId: string, callback: (err: Error | null, result?: any) => void): void;
 		/**
-		 * Evaluate a decision and, recursively, its required decisions.
-		 *
-		 * Evaluation is stateless and completes in one callback chain — DMN has no waiting
-		 * semantics. The callback shape exists to allow async host services at element
-		 * boundaries, not to persist or resume runs.
+		 * Evaluate a decision and, recursively, its required decisions. The id of a decision
+		 * service or business knowledge model evaluates that invocable instead.
 		 * 
 		 */
 		evaluate(decisionId: string, input?: Record<string, any> | undefined): Promise<any>;
 		/**
-		 * Evaluate a decision and, recursively, its required decisions.
-		 *
-		 * Evaluation is stateless and completes in one callback chain — DMN has no waiting
-		 * semantics. The callback shape exists to allow async host services at element
-		 * boundaries, not to persist or resume runs.
+		 * Evaluate a decision and, recursively, its required decisions. The id of a decision
+		 * service or business knowledge model evaluates that invocable instead.
 		 * 
 		 */
 		evaluate(decisionId: string, input: Record<string, any> | null, callback: (err: Error | null, result?: any) => void): void;
@@ -344,7 +329,7 @@ declare module 'dmn-elements' {
 		getDecisionById(id: string): any;
 	}
 	/**
-	 * Generic DRG element wrapper — the activity/Activity.js analogue.
+	 * Generic DRG element wrapper.
 	 *
 	 * Element factories pair this wrapper with an element-specific Behaviour that
 	 * implements `execute(executeMessage, callback)`.
@@ -354,7 +339,7 @@ declare module 'dmn-elements' {
 	export function DrgElement(Behaviour: Function, elementDef: any, context: Context): void;
 	export class DrgElement {
 		/**
-		 * Generic DRG element wrapper — the activity/Activity.js analogue.
+		 * Generic DRG element wrapper.
 		 *
 		 * Element factories pair this wrapper with an element-specific Behaviour that
 		 * implements `execute(executeMessage, callback)`.
@@ -378,8 +363,7 @@ declare module 'dmn-elements' {
 		 * */
 		extensions: Extensions | undefined;
 		/**
-		 * Evaluate element — mints a Behaviour instance and executes it, running any
-		 * extension hooks around the execution
+		 * Evaluate the element, running extension hooks around its behaviour
 		 * @param executeMessage requirements output and evaluation input
 		 * */
 		evaluate(executeMessage: any, callback: (err: Error | null, result?: any) => void): any;
@@ -388,21 +372,18 @@ declare module 'dmn-elements' {
 	 * Coerce a value to its declared typeRef.
 	 *
 	 * Handles FEEL type names and Camunda Modeler's Java-ish aliases (integer, long,
-	 * double). Temporal strings are converted through the environment's expression
-	 * engine (date, time, date and time, duration), and a date widens to the date and
-	 * time at midnight UTC where a date and time is declared (DMN implicit conversion).
+	 * double): temporal strings become FEEL temporal values, and per the DMN implicit
+	 * conversions a one-element list narrows to a declared scalar, a scalar widens to a
+	 * declared collection, and a date widens to a declared date and time.
 	 *
-	 * Other typeRefs resolve against the definitions' item definitions when the
-	 * element carries a context: a typeRef alias follows the chain, allowed values
-	 * are validated as FEEL unary tests, item components coerce the matching
-	 * properties of a structure, and a collection coerces each element. Unknown
-	 * typeRefs pass the value through untouched, as do null and undefined.
+	 * Other typeRefs resolve against the item definitions: aliases, allowed values and
+	 * type constraints, structures, and collections. Unknown typeRefs pass the value
+	 * through untouched, as do null and undefined.
 	 *
-	 * A host can override or extend coercion per typeRef through the environment
-	 * setting `types` — a map of typeRef (exact match) to coercion function
-	 * `(value, typeRef, element) => coerced`. Overrides take precedence over the
-	 * builtin types and item definitions, and own their validation — throw a
-	 * DecisionError to fail loudly.
+	 * The environment setting `types` — a map of typeRef (exact match) to coercion
+	 * function `(value, typeRef, element) => coerced` — takes precedence over builtin
+	 * types and item definitions; an override owns its validation and throws a
+	 * DecisionError to fail.
 	 * @param typeRef declared type, e.g. on a variable, input expression, output, or formal parameter
 	 * @param element owning element, for FEEL access, item definition lookup, and error source
 	 * @returns the coerced value
@@ -415,17 +396,10 @@ declare module 'dmn-elements' {
 		context?: Context;
 	}): any;
 	/**
-	 * Serialize parsed dmn-moddle definitions to lean JSON for precompiled execution.
-	 *
-	 * The engine reads only plain enumerable data — `$type` strings, element
-	 * properties, and href references — so the revived JSON evaluates like the
-	 * source tree: `new Context(JSON.parse(serialized))`. Moddle internals
-	 * (`$parent`, `$descriptor`) are non-enumerable or prototype-bound and never
-	 * serialize; diagram interchange (`dmnDI`) is stripped as runtime dead weight.
-	 * Vendor extension attributes (`$attrs`, also non-enumerable) are kept when
-	 * present, so environment extensions decorate revived trees like the source.
-	 * One-way: a revived tree evaluates, but cannot be written back to DMN XML —
-	 * that needs the moddle instances.
+	 * Serialize parsed dmn-moddle definitions to lean JSON for precompiled execution —
+	 * `new Context(JSON.parse(serialized))` evaluates like the source tree. Diagram
+	 * interchange is stripped, vendor extension attributes are kept. One-way: a revived
+	 * tree cannot be written back to DMN XML.
 	 * @param definitions dmn-moddle definitions (root element from `DmnModdle#fromXML`)
 	 * @returns JSON
 	 */
@@ -483,13 +457,24 @@ declare module 'dmn-elements' {
    */
   type ExtensionFactory = (element: any, context: any) => IExtension | void;
 
+  /** engine settings on `environment.settings` — see docs/API.md Settings */
+  interface EnvironmentSettings {
+	/** coerce and validate decision results against the decision variable typeRef, and invocable results against their declared function item output type */
+	validateResult?: boolean;
+	/** coercion per typeRef (exact match), consulted before builtin types and item definitions — the override owns its validation */
+	types?: Record<string, (value: any, typeRef: string, element: { id?: string; type?: string; environment: any; context?: any }) => any>;
+	/** parsed definitions of an imported model, or a promise thereof — the host parses */
+	resolveImport?: (importDef: { name: string; namespace: string; locationURI?: string; importType?: string; [x: string]: any }) => any;
+	[x: string]: any;
+  }
+
   interface EnvironmentOptions {
 	expressions?: IExpressions;
 	extensions?: Record<string, ExtensionFactory>;
 	Logger?: (scope: string) => ILogger;
 	output?: Record<string, any>;
 	services?: Record<string, (...args: any[]) => any>;
-	settings?: Record<string, any>;
+	settings?: EnvironmentSettings;
 	variables?: Record<string, any>;
 	[x: string]: any;
   }
@@ -560,8 +545,7 @@ declare module 'dmn-elements' {
 		result?: any;
 	};
 	/**
-	 * DMN decision element — dispatches to its decision logic (decision table,
-	 * literal expression) when evaluated
+	 * DMN decision element — evaluates its decision logic
 	 * @param decisionDef dmn-moddle decision definition
 	 * */
 	export function Decision(decisionDef: any, context: Context): DrgElement;
@@ -838,7 +822,7 @@ declare module 'dmn-elements' {
 		
 		_entryValue(entry: any, input: any, typeRef: any): any;
 		/**
-		 * Default output entries apply when no rule matched — the caller checks that at least one output declares one
+		 * Default output entries, applied when no rule matched
 		 * */
 		_defaultOutput(input: any): any;
 		/**
@@ -853,10 +837,8 @@ declare module 'dmn-elements' {
 	/**
 	 * Boxed function definition evaluation — dmn:FunctionDefinition as decision logic.
 	 *
-	 * Evaluates to a FEEL-invocable function. Unlike a business knowledge model,
-	 * whose scope is closed to formal parameters and required knowledge, an inline
-	 * function definition is a closure over its definition scope, per FEEL function
-	 * semantics — e.g. earlier entries of the boxed context defining it.
+	 * Evaluates to a FEEL-invocable function closing over its definition scope, e.g.
+	 * earlier entries of the boxed context defining it.
 	 * @param functionDef dmn-moddle function definition
 	 * */
 	export function FunctionDefinition(functionDef: any, context: Context): void;
@@ -864,10 +846,8 @@ declare module 'dmn-elements' {
 		/**
 		 * Boxed function definition evaluation — dmn:FunctionDefinition as decision logic.
 		 *
-		 * Evaluates to a FEEL-invocable function. Unlike a business knowledge model,
-		 * whose scope is closed to formal parameters and required knowledge, an inline
-		 * function definition is a closure over its definition scope, per FEEL function
-		 * semantics — e.g. earlier entries of the boxed context defining it.
+		 * Evaluates to a FEEL-invocable function closing over its definition scope, e.g.
+		 * earlier entries of the boxed context defining it.
 		 * @param functionDef dmn-moddle function definition
 		 * */
 		constructor(functionDef: any, context: Context);
@@ -1063,9 +1043,8 @@ declare module 'dmn-elements' {
 		element: DrgElement;
 		encapsulatedLogic: any;
 		/**
-		 * Evaluates to the FEEL-invocable function. The function scope is closed per the DMN
-		 * spec: formal parameters and required knowledge only, never the caller's evaluation
-		 * input. Callable from FEEL with positional or named arguments.
+		 * Evaluates to the FEEL-invocable function, with a closed scope — formal parameters
+		 * and required knowledge only. Callable with positional or named arguments.
 		 * @param executeMessage required knowledge bindings
 		 * @param callback called with the function
 		 */
@@ -1193,8 +1172,7 @@ declare module 'dmn-elements/errors' {
 declare module 'dmn-elements/dmn-moddle' {
 	/**
 	 * Rewrite DMN 1.4/1.5 namespace URIs in DMN XML to the DMN 1.3 URIs the
-	 * extended package is registered under — the 1.4/1.5 grammar additions are
-	 * upward compatible, so an aligned document parses losslessly
+	 * extended package is registered under
 	 * @param source DMN XML
 	 * @returns DMN XML with aligned namespaces
 	 */

@@ -15,11 +15,8 @@ const defaultTypes = {
 };
 
 /**
- * Per-evaluation element registry and lazy factory.
- *
- * Consumes a dmn-moddle definitions tree directly — there is no serializer step as in
- * bpmn-elements, since stateless evaluation never needs to round-trip run state.
- * The host parses XML with dmn-moddle and passes the root `dmn:Definitions` element.
+ * Element registry over a dmn-moddle definitions tree — the host parses the XML and
+ * passes the root `dmn:Definitions` element; runtime elements are minted on demand.
  * @param {any} definitions dmn-moddle definitions (root element from `DmnModdle#fromXML`)
  * @param {Environment} [environment]
  */
@@ -36,7 +33,7 @@ export function Context(definitions, environment) {
   this.environment = environment || new Environment();
   /** @internal minted element instances keyed by id */
   this.refs = new Map();
-  /** @internal resolved import contexts keyed by namespace — import names may be empty (DMN 1.5) and must not collide */
+  /** @internal resolved import contexts by namespace */
   this[kImports] = new Map();
 }
 
@@ -149,14 +146,13 @@ Context.prototype.resolveItemDefinition = function resolveItemDefinition(name) {
 };
 
 /**
- * Resolve declared imports through the `resolveImport` environment setting —
- * `resolveImport(importDef)` returns the imported model's parsed dmn-moddle
- * definitions, or a promise thereof (the host parses; dmn-moddle is async).
- * Recursive imports resolve once per namespace, cycles bind to the loaded model.
+ * Resolve declared imports through the `resolveImport` environment setting, which
+ * returns the imported model's parsed definitions or a promise thereof. Nested imports
+ * resolve once per namespace.
  *
  * Definition#evaluate and #trace await this before each run; call it directly when
- * using the context synchronously. Without the setting, loading is skipped and a
- * reference to an imported type fails the evaluation instead.
+ * using the context synchronously. Without the setting, a reference to an imported
+ * type fails the evaluation instead.
  * @param {Map<string, Context>} [seen] resolved contexts by namespace
  * @returns {Promise<Context> | undefined} undefined when there is nothing to load
  */
@@ -227,10 +223,9 @@ Context.prototype.getElementById = function getElementById(id) {
 };
 
 /**
- * Load registered environment extensions for a DRG element — runs when the element
- * is minted. Each extension factory is called with the element and this context and
- * may decorate the element; returned activate/deactivate hooks run around each
- * evaluation (see docs/API.md)
+ * Load registered environment extensions for a DRG element. Each extension factory
+ * is called with the element and this context and may decorate the element; returned
+ * activate/deactivate hooks run around each evaluation
  * @param {import('./drgElement/DrgElement.js').DrgElement} element
  * @returns {Extensions | undefined} undefined when no extension returned hooks
  */

@@ -11,7 +11,7 @@ import { Invocation } from '../decisionLogic/Invocation.js';
 import { LiteralExpression } from '../decisionLogic/LiteralExpression.js';
 import { Relation } from '../decisionLogic/Relation.js';
 import { DecisionError } from '../error/Errors.js';
-import { coerceTypeRef } from '../typeRef.js';
+import { coerceFunctionResult, coerceTypeRef } from '../typeRef.js';
 
 /**
  * DMN business knowledge model — reusable decision logic invocable from FEEL as a
@@ -35,9 +35,8 @@ export function BusinessKnowledgeModelBehaviour(element) {
 }
 
 /**
- * Evaluates to the FEEL-invocable function. The function scope is closed per the DMN
- * spec: formal parameters and required knowledge only, never the caller's evaluation
- * input. Callable from FEEL with positional or named arguments.
+ * Evaluates to the FEEL-invocable function, with a closed scope — formal parameters
+ * and required knowledge only. Callable with positional or named arguments.
  * @param {{ input?: Record<string, any> }} executeMessage required knowledge bindings
  * @param {(err: Error | null, result?: (...args: any[]) => any) => void} callback called with the function
  */
@@ -101,7 +100,9 @@ BusinessKnowledgeModelBehaviour.prototype.execute = function execute(executeMess
       const parameter = parameters[idx];
       scope[parameter.name] = coerceTypeRef(args[idx], parameter.typeRef, element);
     }
-    return bodyLogic.evaluate(scope);
+    const result = bodyLogic.evaluate(scope);
+    if (!element.environment.settings.validateResult) return result;
+    return coerceFunctionResult(result, element.behaviour.variable?.typeRef, element);
   };
   // formal parameter names, so a boxed invocation can map named bindings to positions
   invokeBkm.parameters = parameters.map((parameter) => parameter.name);

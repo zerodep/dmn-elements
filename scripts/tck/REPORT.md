@@ -1,6 +1,6 @@
 # DMN TCK conformance sweep
 
-Assertions: 3511 — pass 3121 (88.9%), mismatch 316, error 74
+Assertions: 3511 — pass 3126 (89.0%), mismatch 314, error 71
 
 ## compliance-level-2: 126/126 (100.0%)
 
@@ -33,7 +33,7 @@ Assertions: 3511 — pass 3121 (88.9%), mismatch 316, error 74
 - PASS 0118-multi-priority-hitpolicy: 3/3
 - PASS 0119-multi-collect-hitpolicy: 3/3
 
-## compliance-level-3: 2995/3385 (88.5%)
+## compliance-level-3: 3000/3385 (88.6%)
 
 - PASS 0001-filter: 1/1
 - PASS 0002-string-functions: 4/4
@@ -152,13 +152,13 @@ Assertions: 3511 — pass 3121 (88.9%), mismatch 316, error 74
 - PASS 1154-boxed-every: 5/5
 - PARTIAL 1155-list-replace-function: 15/22 (mismatch)
 - PARTIAL 1156-range-function: 29/56 (mismatch, evaluation-error)
-- PARTIAL 1157-implicit-conversions: 7/12 (element-not-found, mismatch)
+- PASS 1157-implicit-conversions: 12/12
 - PASS 1160-multiple-imports: 4/4
 - PASS 1161-boxed-list-expression: 2/2
 
 ## Failure categories
 
-### mismatch (316)
+### mismatch (314)
 
 - 0007-date-time#001:Time3 — expected {"$temporal":"time","text":"12:59:01.3-01:00"} got "12:59:01-01:00"
 - 0036-dt-variable-input#_20445ee0-744d-4488-a90e-136701510871:Compare Boolean — expected "Not same boolean" got "Same boolean"
@@ -172,7 +172,7 @@ Assertions: 3511 — pass 3121 (88.9%), mismatch 316, error 74
 - 0068-feel-equality#range_010:range_010 — expected false got null
 - 0068-feel-equality#range_011:range_011 — expected true got false
 - 0068-feel-equality#range_012:range_012 — expected true got false
-- … 304 more
+- … 302 more
 
 ### evaluation-error (71)
 
@@ -189,9 +189,3 @@ Assertions: 3511 — pass 3121 (88.9%), mismatch 316, error 74
 - 0100-arithmetic#add_lhs_dateAndTime_to_rhs_ymDuration_017:add_lhs_dateAndTime_to_rhs_ymDuration_017 — not implemented: negative date
 - 0100-arithmetic#add_lhs_ymDuration_to_rhs_dateAndTime_010:add_lhs_ymDuration_to_rhs_dateAndTime_010 — not implemented: negative date
 - … 59 more
-
-### element-not-found (3)
-
-- 1157-implicit-conversions#004:To Singleton List BKM — <_6476F970-C1FE-46E5-8DC3-D6241FAA8CA7> was not found in _B6EF67C0-8376-4854-8D71-79484E1DBF39
-- 1157-implicit-conversions#005:From Singleton List BKM — <_36886A3E-CFF7-4335-A2EE-1E7587A81763> was not found in _B6EF67C0-8376-4854-8D71-79484E1DBF39
-- 1157-implicit-conversions#006:From Date To Date and Time BKM — <_B7D3B059-9DD8-4192-9E2E-CFF2C135C896> was not found in _B6EF67C0-8376-4854-8D71-79484E1DBF39

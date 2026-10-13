@@ -23,11 +23,8 @@ export function Definition(context, options) {
 }
 
 /**
- * Evaluate a decision and, recursively, its required decisions.
- *
- * Evaluation is stateless and completes in one callback chain — DMN has no waiting
- * semantics. The callback shape exists to allow async host services at element
- * boundaries, not to persist or resume runs.
+ * Evaluate a decision and, recursively, its required decisions. The id of a decision
+ * service or business knowledge model evaluates that invocable instead.
  * @overload
  * @param {string} decisionId
  * @param {(err: Error | null, result?: any) => void} callback called with the decision result

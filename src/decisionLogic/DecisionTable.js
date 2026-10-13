@@ -141,7 +141,7 @@ DecisionTable.prototype._entryValue = function entryValue(entry, input, typeRef)
 };
 
 /**
- * Default output entries apply when no rule matched — the caller checks that at least one output declares one
+ * Default output entries, applied when no rule matched
  * @internal
  */
 DecisionTable.prototype._defaultOutput = function defaultOutput(input) {

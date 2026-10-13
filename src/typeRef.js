@@ -24,21 +24,18 @@ const typeAliases = {
  * Coerce a value to its declared typeRef.
  *
  * Handles FEEL type names and Camunda Modeler's Java-ish aliases (integer, long,
- * double). Temporal strings are converted through the environment's expression
- * engine (date, time, date and time, duration), and a date widens to the date and
- * time at midnight UTC where a date and time is declared (DMN implicit conversion).
+ * double): temporal strings become FEEL temporal values, and per the DMN implicit
+ * conversions a one-element list narrows to a declared scalar, a scalar widens to a
+ * declared collection, and a date widens to a declared date and time.
  *
- * Other typeRefs resolve against the definitions' item definitions when the
- * element carries a context: a typeRef alias follows the chain, allowed values
- * are validated as FEEL unary tests, item components coerce the matching
- * properties of a structure, and a collection coerces each element. Unknown
- * typeRefs pass the value through untouched, as do null and undefined.
+ * Other typeRefs resolve against the item definitions: aliases, allowed values and
+ * type constraints, structures, and collections. Unknown typeRefs pass the value
+ * through untouched, as do null and undefined.
  *
- * A host can override or extend coercion per typeRef through the environment
- * setting `types` — a map of typeRef (exact match) to coercion function
- * `(value, typeRef, element) => coerced`. Overrides take precedence over the
- * builtin types and item definitions, and own their validation — throw a
- * DecisionError to fail loudly.
+ * The environment setting `types` — a map of typeRef (exact match) to coercion
+ * function `(value, typeRef, element) => coerced` — takes precedence over builtin
+ * types and item definitions; an override owns its validation and throws a
+ * DecisionError to fail.
  * @param {any} value
  * @param {string | undefined} typeRef declared type, e.g. on a variable, input expression, output, or formal parameter
  * @param {{ id?: string, type?: string, environment: import('./Environment.js').Environment, context?: import('./Context.js').Context }} element owning element, for FEEL access, item definition lookup, and error source
@@ -51,7 +48,7 @@ export function coerceTypeRef(value, typeRef, element) {
 
 /**
  * @internal
- * @param {Set<string>} chain item definition names followed by typeRef aliasing, for cycle detection
+ * @param {Set<string>} chain item definitions followed, for cycle detection
  */
 function coerce(value, typeRef, element, chain) {
   if (value === null || value === undefined || !typeRef) return value;
@@ -99,7 +96,7 @@ function coerce(value, typeRef, element, chain) {
   throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to ${typeRef}`, element);
 }
 
-/** @internal look the typeRef up among the definitions' (or their imports') item definitions, guarding alias cycles */
+/** @internal coerce to the item definition the typeRef names, local or imported */
 function coerceItemDefinition(value, typeRef, element, chain) {
   const resolved = element.context?.resolveItemDefinition(typeRef);
   if (!resolved) return value;
@@ -110,17 +107,33 @@ function coerceItemDefinition(value, typeRef, element, chain) {
   chain.add(key);
 
   // an imported item definition resolves its nested type references in its own model
-  const owner =
-    resolved.context === element.context
-      ? element
-      : { id: element.id, type: element.type, environment: element.environment, context: resolved.context };
-  return coerceItem(value, resolved.itemDefinition, owner, chain);
+  return coerceItem(value, resolved.itemDefinition, ownerIn(element, resolved.context), chain);
+}
+
+/** @internal the element as seen from the model owning a resolved item definition */
+function ownerIn(element, context) {
+  return context === element.context ? element : { id: element.id, type: element.type, environment: element.environment, context };
 }
 
 /**
- * @internal an item definition or item component — a collection coerces each element,
- * a scalar widens to a singleton list first (DMN implicit conversion)
+ * Coerce an invocable's result to the output type its variable declares through an
+ * item definition's `functionItem`. A typeRef naming no such item definition passes
+ * the value through.
+ * @param {any} value invocation result
+ * @param {string | undefined} typeRef the invocable variable's typeRef
+ * @param {{ id?: string, type?: string, environment: import('./Environment.js').Environment, context: import('./Context.js').Context }} element owning element
+ * @returns {any} the coerced result
+ * @throws {DecisionError} when the result cannot be coerced
  */
+export function coerceFunctionResult(value, typeRef, element) {
+  if (!typeRef) return value;
+  const resolved = element.context.resolveItemDefinition(typeRef);
+  const outputTypeRef = resolved?.itemDefinition.functionItem?.outputTypeRef;
+  if (!outputTypeRef) return value;
+  return coerceTypeRef(value, outputTypeRef, ownerIn(element, resolved.context));
+}
+
+/** @internal coerce to an item definition or item component */
 function coerceItem(value, itemDef, element, chain) {
   if (value === null || value === undefined) return value;
 
@@ -141,7 +154,7 @@ function coerceItem(value, itemDef, element, chain) {
   return validateTypeConstraint(coerceItemValue(value, itemDef, element, chain), itemDef, element);
 }
 
-/** @internal DMN 1.5 type constraint — unary tests over the value as a whole, where allowed values constrain the element type */
+/** @internal DMN 1.5 type constraint over the value as a whole */
 function validateTypeConstraint(value, itemDef, element) {
   const constraint = itemDef.typeConstraint?.text;
   if (constraint && !element.environment.unaryTest(constraint, { '?': value })) {

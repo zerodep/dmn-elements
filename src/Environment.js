@@ -9,9 +9,6 @@ const kOwnExpressions = Symbol.for('own expressions');
 
 /**
  * Shared evaluation environment: variables, services, settings, and the FEEL engine.
- *
- * Mirrors bpmn-elements Environment, minus scripts and timers — DMN evaluation is
- * expression-only and has no waiting semantics.
  * @param {import('#types').EnvironmentOptions} [options]
  */
 export function Environment(options = {}) {
@@ -23,7 +20,7 @@ export function Environment(options = {}) {
   this.extensions = options.extensions;
   /** @type {Record<string, any>} */
   this.output = options.output || {};
-  /** @type {Record<string, any>} */
+  /** @type {import('#types').EnvironmentSettings} */
   this.settings = { ...options.settings };
   /** @type {(scope: string) => import('#types').ILogger} */
   this.Logger = options.Logger || DummyLogger;
@@ -76,8 +73,8 @@ Environment.prototype.recover = function recover(state) {
 };
 
 /**
- * Clone environment, sharing services and a host-provided expressions engine, resetting output —
- * a default engine is rebuilt so it logs through the clone's Logger
+ * Clone environment: override options take precedence, services and a host-provided
+ * expressions engine are shared, output starts empty
  * @param {import('#types').EnvironmentOptions} [overrideOptions] take precedence over current
  * @returns {Environment}
  */
@@ -105,7 +102,7 @@ Environment.prototype.assignVariables = function assignVariables(newVars) {
   Object.assign(this[kVariables], newVars);
 };
 
-/** @param {Record<string, any>} newSettings merged over current settings */
+/** @param {import('#types').EnvironmentSettings} newSettings merged over current settings */
 Environment.prototype.assignSettings = function assignSettings(newSettings) {
   if (!newSettings || typeof newSettings !== 'object') return this;
   Object.assign(this.settings, newSettings);
@@ -150,11 +147,8 @@ Environment.prototype.unaryTest = function unaryTest(test, context) {
 };
 
 /**
- * Overlay services with a proxy that fails a promise-returning service loudly —
- * FEEL evaluation is synchronous, so a leaked promise would silently corrupt the
- * result instead of erroring, and its eventual rejection could never be observed.
- * Reading an unregistered service name logs a warning, since FEEL resolves the
- * invocation to null without an error
+ * Services as exposed to FEEL — a promise-returning service fails the evaluation,
+ * an unregistered name probed by the expression engine logs a warning
  * @param {Record<string, Function>} services
  * @param {import('#types').ILogger} logger
  * @returns {Record<string, Function>}

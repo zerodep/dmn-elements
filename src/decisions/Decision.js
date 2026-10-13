@@ -14,8 +14,7 @@ import { DmnError, DecisionError } from '../error/Errors.js';
 import { coerceTypeRef } from '../typeRef.js';
 
 /**
- * DMN decision element — dispatches to its decision logic (decision table,
- * literal expression) when evaluated
+ * DMN decision element — evaluates its decision logic
  * @param {any} decisionDef dmn-moddle decision definition
  * @param {import('../Context.js').Context} context
  */

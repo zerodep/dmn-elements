@@ -1,4 +1,5 @@
 import { DecisionError } from '../error/Errors.js';
+import { coerceFunctionResult } from '../typeRef.js';
 
 /**
  * @typedef {object} TraceRequirement one resolved requirement of a traced element
@@ -21,11 +22,8 @@ import { DecisionError } from '../error/Errors.js';
  */
 
 /**
- * One evaluation run — walks the decision requirement graph bottom up, memoizing
- * decision results and business knowledge model bindings, guarding against circular
- * requirements. Collects an evaluation trace in completion order.
- *
- * Stateless by design: nothing survives the run (see AGENTS.md).
+ * One evaluation run over the decision requirement graph, collecting the evaluation
+ * trace in completion order
  * @param {import('./Definition.js').Definition} definition
  */
 export function DefinitionExecution(definition) {
@@ -49,10 +47,14 @@ export function DefinitionExecution(definition) {
 DefinitionExecution.prototype.evaluate = function evaluate(decisionId, input, callback) {
   const decisionDef = this.context.getDecisionById(decisionId);
   if (!decisionDef) {
-    const serviceDef = this.context.getDrgElementById(decisionId);
-    if (serviceDef?.$type === 'dmn:DecisionService') {
+    const invocableDef = this.context.getDrgElementById(decisionId);
+    if (invocableDef?.$type === 'dmn:DecisionService') {
       this.logger.debug(`<${this.definition.id}> run decision service <${decisionId}>`);
-      return this._evaluateService(serviceDef, { ...input }, callback);
+      return this._evaluateService(invocableDef, { ...input }, callback);
+    }
+    if (invocableDef?.$type === 'dmn:BusinessKnowledgeModel') {
+      this.logger.debug(`<${this.definition.id}> run business knowledge model <${decisionId}>`);
+      return this._invokeBkm(invocableDef, { ...input }, callback);
     }
     return callback(new DecisionError(`<${decisionId}> was not found in ${this.definition.id}`, this.definition));
   }
@@ -61,8 +63,7 @@ DefinitionExecution.prototype.evaluate = function evaluate(decisionId, input, ca
 };
 
 /**
- * Evaluate a decision service: seed provided input decision values, then evaluate
- * the output decisions — encapsulated decisions are reached through requirements
+ * Evaluate a decision service from the provided input decision values
  * @internal
  */
 DefinitionExecution.prototype._evaluateService = function evaluateService(serviceDef, input, callback) {
@@ -84,11 +85,36 @@ DefinitionExecution.prototype._evaluateService = function evaluateService(servic
     entry.requirements.push({ id: inputDecision.id, required: inputDecision.id, type: inputDecision.$type, bound, value });
   }
 
-  return this._evaluateOutputs(parts.outputs, input, (err, result) => {
+  return this._evaluateOutputs(parts.outputs, input, (err, raw) => {
     if (err) return callback(err);
+    let result;
+    try {
+      result = functionResult(serviceDef, this.context, raw);
+    } catch (resultErr) {
+      return callback(resultErr);
+    }
     this.logger.debug(`<${serviceDef.id}> completed`);
     entry.result = result;
     this.trace.push(entry);
+    return callback(null, result);
+  });
+};
+
+/**
+ * Invoke a business knowledge model directly, its formal parameters bound from the
+ * input by name
+ * @internal
+ */
+DefinitionExecution.prototype._invokeBkm = function invokeBkm(bkmDef, input, callback) {
+  return this._evaluateBkm(bkmDef, (err, invocable) => {
+    if (err) return callback(err);
+    let result;
+    try {
+      result = invocable(...invocable.parameters.map((name) => input[name]));
+    } catch (invokeErr) {
+      return callback(invokeErr instanceof DecisionError ? invokeErr : new DecisionError(invokeErr.message, bkmDef, invokeErr));
+    }
+    this.logger.debug(`<${bkmDef.id}> completed`);
     return callback(null, result);
   });
 };
@@ -124,8 +150,8 @@ DefinitionExecution.prototype._resolveServiceParts = function resolveServicePart
 };
 
 /**
- * Evaluate output decisions sequentially — a single output decision yields its bare
- * result, multiple yield an object keyed by output decision variable name
+ * Evaluate output decisions — a single output decision yields its bare result,
+ * multiple yield an object keyed by output decision variable name
  * @internal
  */
 DefinitionExecution.prototype._evaluateOutputs = function evaluateOutputs(outputs, input, callback, context = this.context) {
@@ -190,10 +216,8 @@ DefinitionExecution.prototype._evaluateDecision = function evaluateDecision(deci
 };
 
 /**
- * Evaluate required decisions, input data, and business knowledge models, binding
- * results to the evaluation input under each element's variable name — nested
- * under the import name for imported elements (`common.Greeting`) — and recording
- * the bindings on the requiring element's trace entry
+ * Evaluate an element's requirements, binding them into the evaluation input under
+ * their variable names — nested under the import name for imported elements
  * @internal
  * @param {import('../Context.js').Context} [context] the requiring element's owning context
  */
@@ -291,9 +315,8 @@ DefinitionExecution.prototype._resolveRequirements = function resolveRequirement
 };
 
 /**
- * Bind a business knowledge model as a FEEL-invocable function. The function scope
- * is closed: its own required knowledge is resolved here, the caller's evaluation
- * input never leaks in.
+ * Bind a business knowledge model as a FEEL-invocable function with a closed scope —
+ * its formal parameters and required knowledge only
  * @internal
  * @param {import('../Context.js').Context} [context] owning context — an imported model binds in its own model
  */
@@ -328,11 +351,9 @@ DefinitionExecution.prototype._evaluateBkm = function evaluateBkm(bkmDef, callba
 };
 
 /**
- * Bind a decision service as a FEEL-invocable function. Positional parameters are
- * the service's input data followed by its input decisions, in declaration order —
- * the order the DMN TCK pins (0085). Each invocation runs a fresh sub-execution —
- * input decision arguments are seeded, the caller's evaluation input never leaks
- * in — sharing this run's cycle guard and trace.
+ * Bind a decision service as a FEEL-invocable function with a closed scope —
+ * positional parameters are the input data followed by the input decisions, in
+ * declaration order
  * @internal
  */
 DefinitionExecution.prototype._bindService = function bindService(serviceDef, callback, context = this.context) {
@@ -385,7 +406,7 @@ DefinitionExecution.prototype._bindService = function bindService(serviceDef, ca
     // guard in case async host seams are involved in the future
     if (!completed) throw new DecisionError(`<${id}> did not complete synchronously`, serviceDef);
     if (failure) throw failure;
-    return outcome;
+    return functionResult(serviceDef, context, outcome);
   };
   // parameter names, so a boxed invocation can map named bindings to positions
   invocable.parameters = parameters.map((parameter) => parameter.name);
@@ -399,6 +420,17 @@ DefinitionExecution.prototype._bindService = function bindService(serviceDef, ca
   return callback(null, invocable);
 };
 
+/** @internal an invocable's result coerced to its declared function item output type, under validateResult */
+function functionResult(invocableDef, context, result) {
+  if (!context.environment.settings.validateResult) return result;
+  return coerceFunctionResult(result, invocableDef.variable?.typeRef, {
+    id: invocableDef.id,
+    type: invocableDef.$type,
+    environment: context.environment,
+    context,
+  });
+}
+
 /** @internal the name a value binds under — nested under the import name for imported elements */
 function boundName(importName, name) {
   return importName ? `${importName}.${name}` : name;
@@ -408,7 +440,7 @@ function resultName(drgElementDef) {
   return drgElementDef.variable?.name || drgElementDef.name || drgElementDef.id;
 }
 
-/** @internal memoization key — namespace-qualified, element ids are only unique per model */
+/** @internal namespace-qualified memoization key */
 function refKey(context, id) {
   return `${context.definitions.namespace}#${id}`;
 }
