@@ -389,7 +389,8 @@ declare module 'dmn-elements' {
 	 *
 	 * Handles FEEL type names and Camunda Modeler's Java-ish aliases (integer, long,
 	 * double). Temporal strings are converted through the environment's expression
-	 * engine (date, time, date and time, duration).
+	 * engine (date, time, date and time, duration), and a date widens to the date and
+	 * time at midnight UTC where a date and time is declared (DMN implicit conversion).
 	 *
 	 * Other typeRefs resolve against the definitions' item definitions when the
 	 * element carries a context: a typeRef alias follows the chain, allowed values

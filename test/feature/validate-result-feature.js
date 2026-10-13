@@ -87,6 +87,32 @@ Feature('decision result validation', () => {
     });
   });
 
+  Scenario('a date result widens to the date and time declared on the decision variable', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="dueDefinitions" name="Due" namespace="https://example.com/dmn/due">
+  <decision id="dueAt" name="Due at">
+    <variable id="dueAtVariable" name="Due at" typeRef="date and time" />
+    <literalExpression id="dueAtExpression"><text>date(2000, 1, 2)</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition with a decision typed date and time whose logic yields a date, with the validateResult setting', async () => {
+      definition = await getDefinition(source, { settings: { validateResult: true } });
+    });
+
+    /** @type {any} */
+    let result;
+    When('the decision is evaluated', async () => {
+      result = await definition.evaluate('dueAt', {});
+    });
+
+    Then('the result is the date and time at midnight UTC', () => {
+      expect(definition.environment.resolveExpression('r = date and time("2000-01-02T00:00:00Z")', { r: result })).to.be.true;
+    });
+  });
+
   Scenario('a failing decision with result validation', () => {
     /** @type {Definition} */
     let definition;

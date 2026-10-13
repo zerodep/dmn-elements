@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.3.1 - 2026-10-13
+## v0.4.0 - 2026-10-13
 
 ### Added
 
@@ -9,6 +9,7 @@
 ### Changed
 
 - A scalar value where a collection item definition is expected widens to a singleton list, per the DMN implicit conversion rules, instead of failing with a `DecisionError` — applies at every typed seam: input data, decision table columns, decision results under `validateResult`, context entries, and business knowledge model parameters (DMN TCK 1157)
+- A date where a `date and time` is declared widens to that date at midnight UTC, per the DMN implicit conversion rules, instead of passing through as a date — same seams as above (DMN TCK 1157)
 
 ### Fixed
 

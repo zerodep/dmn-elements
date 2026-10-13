@@ -25,7 +25,8 @@ const typeAliases = {
  *
  * Handles FEEL type names and Camunda Modeler's Java-ish aliases (integer, long,
  * double). Temporal strings are converted through the environment's expression
- * engine (date, time, date and time, duration).
+ * engine (date, time, date and time, duration), and a date widens to the date and
+ * time at midnight UTC where a date and time is declared (DMN implicit conversion).
  *
  * Other typeRefs resolve against the definitions' item definitions when the
  * element carries a context: a typeRef alias follows the chain, allowed values
@@ -82,10 +83,16 @@ function coerce(value, typeRef, element, chain) {
       return number;
     }
     default: {
-      if (typeof value !== 'string') return value;
-      const temporal = element.environment.resolveExpression(`${type}(raw)`, { raw: value });
-      if (temporal === null || temporal === undefined) break;
-      return temporal;
+      if (typeof value === 'string') {
+        const temporal = element.environment.resolveExpression(`${type}(raw)`, { raw: value });
+        if (temporal === null || temporal === undefined) break;
+        return temporal;
+      }
+      // DMN implicit conversion — a date widens to the date and time at midnight UTC
+      if (type === 'date and time' && element.environment.resolveExpression('raw instance of date', { raw: value })) {
+        return element.environment.resolveExpression('date and time(raw, time("00:00:00Z"))', { raw: value });
+      }
+      return value;
     }
   }
 

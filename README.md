@@ -67,10 +67,10 @@ FEEL evaluation warnings reported by feelin — an unknown variable or context k
 Checked against the [DMN TCK](https://github.com/dmn-tck/tck) (October 2026):
 
 - **Compliance level 2: 100%** (126/126 assertions)
-- Compliance level 3: 88.4% (2992/3385)
-- Overall: 88.8% (3118/3511)
+- Compliance level 3: 88.5% (2995/3385)
+- Overall: 88.9% (3121/3511)
 
-All boxed expressions of DMN 1.3 evaluate — decision tables, literal expressions, contexts, invocations, relations, lists, and function definitions — as do the DMN 1.4 additions (conditional, filter, for, some, every; their TCK cases pass in full), plus decision services, business knowledge models, item definitions, and multi-model imports. The DMN 1.5 changes are covered too: item definition type constraints (no TCK case exercises them yet) and the simplified imported input data binding. The remaining gap is dominated by FEEL edge-case semantics owned by [feelin](https://github.com/nikku/feelin) (arithmetic corner cases, temporal edge cases, range equality), plus the date to date-and-time implicit conversion the TCK added in September 2026, which is not implemented yet.
+All boxed expressions of DMN 1.3 evaluate — decision tables, literal expressions, contexts, invocations, relations, lists, and function definitions — as do the DMN 1.4 additions (conditional, filter, for, some, every; their TCK cases pass in full), plus decision services, business knowledge models, item definitions, and multi-model imports. The DMN 1.5 changes are covered too: item definition type constraints (no TCK case exercises them yet) and the simplified imported input data binding. The remaining gap is dominated by FEEL edge-case semantics owned by [feelin](https://github.com/nikku/feelin) (arithmetic corner cases, temporal edge cases, range equality).
 
 The full per-case report lives in [scripts/tck/REPORT.md](scripts/tck/REPORT.md) — regenerate it with `npm run test:tck` (it tells you how to fetch the TCK test cases on first run).
 

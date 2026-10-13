@@ -81,6 +81,19 @@ describe('coerceTypeRef(value, typeRef, element)', () => {
       expect(coerceTypeRef(temporal, 'date', element)).to.equal(temporal);
     });
 
+    it('a date widens to the date and time at midnight UTC', () => {
+      const date = element.environment.resolveExpression('date("2026-07-09")');
+      for (const typeRef of ['date and time', 'dateTime']) {
+        const widened = coerceTypeRef(date, typeRef, element);
+        expect(element.environment.resolveExpression('dt = date and time("2026-07-09T00:00:00Z")', { dt: widened }), typeRef).to.be.true;
+      }
+    });
+
+    it('passes a date and time through untouched where a date and time is declared', () => {
+      const temporal = element.environment.resolveExpression('date and time("2026-07-09T12:30:00+02:00")');
+      expect(coerceTypeRef(temporal, 'date and time', element)).to.equal(temporal);
+    });
+
     it('throws DecisionError on a string that is no date', () => {
       expect(() => coerceTypeRef('someday', 'date', element)).to.throw(DecisionError, /coerce/);
     });

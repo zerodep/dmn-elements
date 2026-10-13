@@ -1,6 +1,6 @@
 # DMN TCK conformance sweep
 
-Assertions: 3511 — pass 3118 (88.8%), mismatch 319, error 74
+Assertions: 3511 — pass 3121 (88.9%), mismatch 316, error 74
 
 ## compliance-level-2: 126/126 (100.0%)
 
@@ -33,7 +33,7 @@ Assertions: 3511 — pass 3118 (88.8%), mismatch 319, error 74
 - PASS 0118-multi-priority-hitpolicy: 3/3
 - PASS 0119-multi-collect-hitpolicy: 3/3
 
-## compliance-level-3: 2992/3385 (88.4%)
+## compliance-level-3: 2995/3385 (88.5%)
 
 - PASS 0001-filter: 1/1
 - PASS 0002-string-functions: 4/4
@@ -152,13 +152,13 @@ Assertions: 3511 — pass 3118 (88.8%), mismatch 319, error 74
 - PASS 1154-boxed-every: 5/5
 - PARTIAL 1155-list-replace-function: 15/22 (mismatch)
 - PARTIAL 1156-range-function: 29/56 (mismatch, evaluation-error)
-- PARTIAL 1157-implicit-conversions: 4/12 (mismatch, element-not-found)
+- PARTIAL 1157-implicit-conversions: 7/12 (element-not-found, mismatch)
 - PASS 1160-multiple-imports: 4/4
 - PASS 1161-boxed-list-expression: 2/2
 
 ## Failure categories
 
-### mismatch (319)
+### mismatch (316)
 
 - 0007-date-time#001:Time3 — expected {"$temporal":"time","text":"12:59:01.3-01:00"} got "12:59:01-01:00"
 - 0036-dt-variable-input#_20445ee0-744d-4488-a90e-136701510871:Compare Boolean — expected "Not same boolean" got "Same boolean"
@@ -172,7 +172,7 @@ Assertions: 3511 — pass 3118 (88.8%), mismatch 319, error 74
 - 0068-feel-equality#range_010:range_010 — expected false got null
 - 0068-feel-equality#range_011:range_011 — expected true got false
 - 0068-feel-equality#range_012:range_012 — expected true got false
-- … 307 more
+- … 304 more
 
 ### evaluation-error (71)
 
