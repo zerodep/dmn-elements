@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.3.1 - 2026-10-13
+
+### Added
+
+- FEEL evaluation warnings reported by feelin — unknown variables and context keys, missing functions, invalid built-in arguments — are logged through the `Logger` environment option at `warn` level under the `feel` scope; FEEL yields null in these cases without an error, so a mistyped service or variable name is now visible under `DEBUG` — a `Logger` passed through `Definition` options receives them too
+
+### Changed
+
+- A scalar value where a collection item definition is expected widens to a singleton list, per the DMN implicit conversion rules, instead of failing with a `DecisionError` — applies at every typed seam: input data, decision table columns, decision results under `validateResult`, context entries, and business knowledge model parameters (DMN TCK 1157)
+
+### Fixed
+
+- Several imports without a name (allowed since DMN 1.5, imported elements are then referenced unqualified) no longer collide — each import resolves against its own namespace, so a requirement into the second nameless import is found (DMN TCK 1160)
+
 ## v0.3.0 - 2026-09-20
 
 ### Breaking

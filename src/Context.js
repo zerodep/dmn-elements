@@ -36,7 +36,7 @@ export function Context(definitions, environment) {
   this.environment = environment || new Environment();
   /** @internal minted element instances keyed by id */
   this.refs = new Map();
-  /** @internal resolved import contexts keyed by import name */
+  /** @internal resolved import contexts keyed by namespace — import names may be empty (DMN 1.5) and must not collide */
   this[kImports] = new Map();
 }
 
@@ -97,7 +97,7 @@ Context.prototype.resolveDrgElementRef = function resolveDrgElementRef(href) {
   const importDef = (this.definitions.import || []).find((declared) => declared.namespace === namespace);
   if (!importDef) return undefined;
 
-  const imported = this[kImports].get(importDef.name);
+  const imported = this[kImports].get(namespace);
   if (!imported) {
     throw new DecisionError(
       typeof this.environment.settings.resolveImport === 'function'
@@ -133,9 +133,10 @@ Context.prototype.resolveItemDefinition = function resolveItemDefinition(name) {
   const dotIdx = name.indexOf('.');
   if (dotIdx < 1) return undefined;
   const importName = name.slice(0, dotIdx);
-  if (!(this.definitions.import || []).some((importDef) => importDef.name === importName)) return undefined;
+  const importDef = (this.definitions.import || []).find((declared) => declared.name === importName);
+  if (!importDef) return undefined;
 
-  const imported = this[kImports].get(importName);
+  const imported = this[kImports].get(importDef.namespace);
   if (!imported) {
     throw new DecisionError(
       typeof this.environment.settings.resolveImport === 'function'
@@ -162,7 +163,7 @@ Context.prototype.resolveItemDefinition = function resolveItemDefinition(name) {
 Context.prototype.loadImports = function loadImports(seen) {
   const imports = this.definitions.import || [];
   if (!imports.length) return;
-  if (imports.every((importDef) => this[kImports].has(importDef.name))) return;
+  if (imports.every((importDef) => this[kImports].has(importDef.namespace))) return;
   const resolveImport = this.environment.settings.resolveImport;
   if (typeof resolveImport !== 'function') return;
 
@@ -172,7 +173,7 @@ Context.prototype.loadImports = function loadImports(seen) {
 /** @internal */
 Context.prototype._loadImports = async function loadImportsAsync(resolveImport, seen) {
   for (const importDef of this.definitions.import) {
-    if (this[kImports].has(importDef.name)) continue;
+    if (this[kImports].has(importDef.namespace)) continue;
 
     let imported = seen.get(importDef.namespace);
     if (!imported) {
@@ -184,7 +185,7 @@ Context.prototype._loadImports = async function loadImportsAsync(resolveImport, 
       seen.set(importDef.namespace, imported);
       await imported.loadImports(seen);
     }
-    this[kImports].set(importDef.name, imported);
+    this[kImports].set(importDef.namespace, imported);
   }
   return this;
 };

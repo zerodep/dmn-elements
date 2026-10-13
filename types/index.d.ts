@@ -152,8 +152,6 @@ declare module 'dmn-elements' {
 		/** @type {Record<string, any>} unlisted constructor options */
 		options: Record<string, any>;
 		
-		expressions: IExpressions;
-		
 		extensions: Record<string, Function> | undefined;
 		
 		output: Record<string, any>;
@@ -161,6 +159,8 @@ declare module 'dmn-elements' {
 		settings: Record<string, any>;
 		
 		Logger: (scope: string) => ILogger;
+		
+		expressions: IExpressions;
 		getState(): {
 			settings: {
 				[x: string]: any;
@@ -178,7 +178,8 @@ declare module 'dmn-elements' {
 		 */
 		recover(state?: ReturnType<Environment["getState"]>): this;
 		/**
-		 * Clone environment, sharing expressions and services, resetting output
+		 * Clone environment, sharing services and a host-provided expressions engine, resetting output —
+		 * a default engine is rebuilt so it logs through the clone's Logger
 		 * @param overrideOptions take precedence over current
 		 * */
 		clone(overrideOptions?: EnvironmentOptions): Environment;
@@ -203,10 +204,12 @@ declare module 'dmn-elements' {
 		 * @param context merged over environment variables, tested value on key `?`
 		 */
 		unaryTest(test: string, context?: Record<string, any>): boolean;
+		[kOwnExpressions]: boolean;
 		[kServices]: Record<string, (...args: any[]) => any>;
 		[kGuardedServices]: Record<string, Function>;
 		[kVariables]: Record<string, any>;
 	}
+	const kOwnExpressions: unique symbol;
 	const kServices: unique symbol;
 	const kGuardedServices: unique symbol;
 	const kVariables: unique symbol;
@@ -215,9 +218,28 @@ declare module 'dmn-elements' {
 	 *
 	 * Pluggable via Environment option `expressions`. A replacement must implement
 	 * `resolveExpression(expression, context)` and `unaryTest(test, context)`.
+	 *
+	 * feelin reports evaluation warnings (unknown variables and context keys, missing
+	 * functions, invalid built-in arguments) alongside the value — FEEL yields null in
+	 * these cases without an error, so they are logged at `warn` level
+	 * @param logger receives feelin warnings, silent by default
 	 */
-	export function Expressions(): Expressions;
+	export function Expressions(logger?: ILogger): Expressions;
 	export class Expressions {
+		/**
+		 * FEEL expression engine backed by feelin.
+		 *
+		 * Pluggable via Environment option `expressions`. A replacement must implement
+		 * `resolveExpression(expression, context)` and `unaryTest(test, context)`.
+		 *
+		 * feelin reports evaluation warnings (unknown variables and context keys, missing
+		 * functions, invalid built-in arguments) alongside the value — FEEL yields null in
+		 * these cases without an error, so they are logged at `warn` level
+		 * @param logger receives feelin warnings, silent by default
+		 */
+		constructor(logger?: ILogger);
+		
+		logger: ILogger;
 		/**
 		 * Evaluate a FEEL expression
 		 * @param expression FEEL expression
@@ -232,6 +254,11 @@ declare module 'dmn-elements' {
 		 * @returns whether the tested value matches
 		 */
 		unaryTest(test: string, context?: Record<string, any>): boolean;
+		
+		_warn(expression: string, warnings: {
+			type: string;
+			message: string;
+		}[]): void;
 	}
 	/**
 	 * Executable DMN definitions — the top-level element that walks the decision

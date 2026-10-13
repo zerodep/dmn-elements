@@ -1,9 +1,11 @@
 import { Expressions } from './Expressions.js';
 import { DecisionError } from './error/Errors.js';
+import { DummyLogger } from './DummyLogger.js';
 
 const kServices = Symbol.for('services');
 const kGuardedServices = Symbol.for('guarded services');
 const kVariables = Symbol.for('variables');
+const kOwnExpressions = Symbol.for('own expressions');
 
 /**
  * Shared evaluation environment: variables, services, settings, and the FEEL engine.
@@ -17,8 +19,6 @@ export function Environment(options = {}) {
 
   /** @type {Record<string, any>} unlisted constructor options */
   this.options = validateOptions(options);
-  /** @type {import('#types').IExpressions} */
-  this.expressions = options.expressions || new Expressions();
   /** @type {Record<string, Function> | undefined} */
   this.extensions = options.extensions;
   /** @type {Record<string, any>} */
@@ -27,6 +27,9 @@ export function Environment(options = {}) {
   this.settings = { ...options.settings };
   /** @type {(scope: string) => import('#types').ILogger} */
   this.Logger = options.Logger || DummyLogger;
+  /** @type {import('#types').IExpressions} */
+  this.expressions = options.expressions || new Expressions(this.Logger('feel'));
+  this[kOwnExpressions] = !options.expressions;
   this[kServices] = options.services || {};
   this[kGuardedServices] = guardServices(this[kServices], this.Logger('environment'));
   this[kVariables] = options.variables || {};
@@ -73,7 +76,8 @@ Environment.prototype.recover = function recover(state) {
 };
 
 /**
- * Clone environment, sharing expressions and services, resetting output
+ * Clone environment, sharing services and a host-provided expressions engine, resetting output —
+ * a default engine is rebuilt so it logs through the clone's Logger
  * @param {import('#types').EnvironmentOptions} [overrideOptions] take precedence over current
  * @returns {Environment}
  */
@@ -81,7 +85,7 @@ Environment.prototype.clone = function clone(overrideOptions = {}) {
   const services = this[kServices];
   const clonedOptions = {
     ...this.options,
-    expressions: this.expressions,
+    ...(this[kOwnExpressions] ? undefined : { expressions: this.expressions }),
     extensions: this.extensions,
     Logger: this.Logger,
     output: {},
@@ -159,7 +163,6 @@ function guardServices(services, logger) {
   const wrappers = new Map();
   const warned = new Set();
   return new Proxy(services, {
-    // feelin probes context keys with `in` — warn once per unregistered name
     has(target, name) {
       const found = name in target;
       if (!found && typeof name === 'string' && !warned.has(name)) {
@@ -224,12 +227,4 @@ function validateOptions(input) {
     }
   }
   return options;
-}
-
-function DummyLogger() {
-  return {
-    debug() {},
-    error() {},
-    warn() {},
-  };
 }

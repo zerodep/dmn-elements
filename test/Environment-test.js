@@ -96,6 +96,20 @@ describe('Environment', () => {
       const environment = new Environment({ expressions });
       expect(environment.clone().expressions).to.equal(expressions);
     });
+
+    it('a default expressions instance is rebuilt with the cloned Logger', () => {
+      /** @type {string[]} */
+      const scopes = [];
+      const environment = new Environment();
+      const clone = environment.clone({
+        Logger(scope) {
+          scopes.push(scope);
+          return { debug() {}, error() {}, warn() {} };
+        },
+      });
+      expect(clone.expressions).to.be.instanceof(Expressions).and.not.equal(environment.expressions);
+      expect(scopes).to.include('feel');
+    });
   });
 
   describe('services', () => {
@@ -169,6 +183,23 @@ describe('Environment', () => {
       const subtract = Object.assign((/** @type {number[]} */ ...args) => args[0] - args[1], { $args: ['minuend', 'subtrahend'] });
       const environment = new Environment({ services: { subtract } });
       expect(environment.resolveExpression('services.subtract(subtrahend: 1, minuend: 5)')).to.equal(4);
+    });
+
+    it('an expression engine probing the services overlay with in sees registered names only', () => {
+      const environment = new Environment({
+        services: { known() {} },
+        expressions: {
+          resolveExpression(_expression, context = {}) {
+            return ['known', 'missing', 'missing', Symbol.iterator].map((name) => name in context.services);
+          },
+          unaryTest(_test, context = {}) {
+            return 'missing' in context.services;
+          },
+        },
+      });
+
+      expect(environment.resolveExpression('any')).to.deep.equal([true, false, false, false]);
+      expect(environment.unaryTest('any')).to.be.false;
     });
 
     it('a variable named services shadows the services overlay', () => {

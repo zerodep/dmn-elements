@@ -111,6 +111,57 @@ Feature('item definition types', () => {
     });
   });
 
+  Scenario('scalar values widen to singleton lists at typed seams', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="widenDefinitions" name="Widen" namespace="https://example.com/dmn/widen">
+  <itemDefinition id="tScores" name="tScores" isCollection="true">
+    <typeRef>number</typeRef>
+  </itemDefinition>
+  <decision id="single" name="Single">
+    <variable id="singleVariable" name="Single" typeRef="tScores" />
+    <literalExpression id="singleExpression"><text>7</text></literalExpression>
+  </decision>
+  <decision id="total" name="Total">
+    <variable id="totalVariable" name="Total" typeRef="number" />
+    <knowledgeRequirement id="totalRequiresSum">
+      <requiredKnowledge href="#sumOf" />
+    </knowledgeRequirement>
+    <literalExpression id="totalExpression"><text>Sum of(5)</text></literalExpression>
+  </decision>
+  <businessKnowledgeModel id="sumOf" name="Sum of">
+    <variable id="sumOfVariable" name="Sum of" />
+    <encapsulatedLogic id="sumOfLogic" kind="FEEL">
+      <formalParameter id="sumOfValues" name="values" typeRef="tScores" />
+      <literalExpression id="sumOfExpression"><text>sum(values)</text></literalExpression>
+    </encapsulatedLogic>
+  </businessKnowledgeModel>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition with a decision typed as a collection and a business knowledge model with a collection parameter', async () => {
+      definition = await getDefinition(source, { settings: { validateResult: true } });
+    });
+
+    /** @type {any} */
+    let result;
+    When('the decision yielding a scalar is evaluated with result validation', async () => {
+      result = await definition.evaluate('single', {});
+    });
+
+    Then('the result is a singleton list', () => {
+      expect(result).to.deep.equal([7]);
+    });
+
+    When('the business knowledge model is invoked with a scalar argument', async () => {
+      result = await definition.evaluate('total', {});
+    });
+
+    Then('the parameter widened to a singleton list', () => {
+      expect(result).to.equal(5);
+    });
+  });
+
   Scenario('a collection item definition', () => {
     const source = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="scoresDefinitions" name="Scores" namespace="https://example.com/dmn/scores">
@@ -147,13 +198,21 @@ Feature('item definition types', () => {
 
     /** @type {any} */
     let error;
-    When('the total is evaluated with a value that is no list', async () => {
-      error = await definition.evaluate('total', { Scores: 5 }).catch((/** @type {Error} */ err) => err);
+    When('the total is evaluated with a numeric string that is no list', async () => {
+      result = await definition.evaluate('total', { Scores: '5' });
     });
 
-    Then('a decision error points out the failed collection coercion', () => {
+    Then('the value widened to a singleton list and its element was coerced', () => {
+      expect(result).to.equal(5);
+    });
+
+    When('the total is evaluated with a value that is no list and no number', async () => {
+      error = await definition.evaluate('total', { Scores: 'plenty' }).catch((/** @type {Error} */ err) => err);
+    });
+
+    Then('a decision error points out the failed element coercion', () => {
       expect(error).to.be.instanceof(DecisionError);
-      expect(error.message).to.match(/cannot coerce 5 to collection tScores/);
+      expect(error.message).to.match(/cannot coerce "plenty" to number/);
     });
   });
 

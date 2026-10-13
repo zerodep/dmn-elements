@@ -110,14 +110,15 @@ function coerceItemDefinition(value, typeRef, element, chain) {
   return coerceItem(value, resolved.itemDefinition, owner, chain);
 }
 
-/** @internal an item definition or item component — a collection coerces each element */
+/**
+ * @internal an item definition or item component — a collection coerces each element,
+ * a scalar widens to a singleton list first (DMN implicit conversion)
+ */
 function coerceItem(value, itemDef, element, chain) {
   if (value === null || value === undefined) return value;
 
   if (itemDef.isCollection) {
-    if (!Array.isArray(value)) {
-      throw new DecisionError(`<${element.id}> cannot coerce ${JSON.stringify(value)} to collection ${itemDef.name}`, element);
-    }
+    if (!Array.isArray(value)) value = [value];
     // a fresh chain per element — like components, descending into the value makes recursion finite
     return validateTypeConstraint(
       value.map((item) => (item === null || item === undefined ? item : coerceItemValue(item, itemDef, element, new Set()))),

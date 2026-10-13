@@ -304,6 +304,74 @@ Feature('imported definitions', () => {
     });
   });
 
+  Scenario('multiple imports without a name', () => {
+    const modelA = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="aDefinitions" name="A" namespace="https://example.com/dmn/model-a">
+  <inputData id="person" name="person">
+    <variable id="personVariable" name="person" />
+  </inputData>
+</definitions>`;
+
+    const modelB = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="bDefinitions" name="B" namespace="https://example.com/dmn/model-b">
+  <import name="" namespace="https://example.com/dmn/model-a" locationURI="model-a.dmn" importType="https://www.omg.org/spec/DMN/20191111/MODEL/" />
+  <decision id="decisionB" name="DecisionB">
+    <variable id="decisionBVariable" name="DecisionB" typeRef="string" />
+    <informationRequirement id="bRequiresPerson">
+      <requiredInput href="https://example.com/dmn/model-a#person" />
+    </informationRequirement>
+    <literalExpression id="decisionBExpression"><text>person.name</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="cDefinitions" name="C" namespace="https://example.com/dmn/model-c">
+  <import name="" namespace="https://example.com/dmn/model-a" locationURI="model-a.dmn" importType="https://www.omg.org/spec/DMN/20191111/MODEL/" />
+  <import name="" namespace="https://example.com/dmn/model-b" locationURI="model-b.dmn" importType="https://www.omg.org/spec/DMN/20191111/MODEL/" />
+  <decision id="decisionC" name="DecisionC">
+    <variable id="decisionCVariable" name="DecisionC" typeRef="string" />
+    <informationRequirement id="cRequiresPerson">
+      <requiredInput href="https://example.com/dmn/model-a#person" />
+    </informationRequirement>
+    <informationRequirement id="cRequiresB">
+      <requiredDecision href="https://example.com/dmn/model-b#decisionB" />
+    </informationRequirement>
+    <literalExpression id="decisionCExpression"><text>person.name + DecisionB</text></literalExpression>
+  </decision>
+</definitions>`;
+
+    /** @type {Definition} */
+    let definition;
+    Given('a definition with two nameless imports, one of which imports the other', async () => {
+      const models = new Map([
+        ['https://example.com/dmn/model-a', modelA],
+        ['https://example.com/dmn/model-b', modelB],
+      ]);
+      definition = await getDefinition(source, {
+        settings: {
+          async resolveImport(/** @type {any} */ importDef) {
+            return await testHelpers.moddleContext(/** @type {string} */ (models.get(importDef.namespace)));
+          },
+        },
+      });
+    });
+
+    /** @type {any} */
+    let traced;
+    When('the decision is traced', async () => {
+      traced = await definition.trace('decisionC', { person: { name: 'Peter', age: 25 } });
+    });
+
+    Then('both imported models were resolved', () => {
+      expect(traced.result).to.equal('PeterPeter');
+    });
+
+    And('the imported elements are bound unqualified', () => {
+      const entry = traced.trace.find((/** @type {any} */ t) => t.id === 'decisionC');
+      expect(entry.requirements.map((/** @type {any} */ r) => r.bound)).to.deep.equal(['person', 'DecisionB']);
+    });
+  });
+
   Scenario('a requirement href into an undeclared namespace', () => {
     const source = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="strayRefDefinitions" name="Stray ref" namespace="https://example.com/dmn/stray-ref">

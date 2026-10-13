@@ -3,5 +3,5 @@
   "reporter": "spec",
   "recursive": true,
   "timeout": 1000,
-  "ui": "mocha-cakes-2"
+  "ui": "mocha-scenarios"
 }

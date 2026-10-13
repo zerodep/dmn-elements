@@ -6,6 +6,6 @@
     "emitDeclarationOnly": false,
     "declaration": false,
     "noEmit": true,
-    "types": ["node", "chai", "mocha"]
+    "types": ["node", "chai", "mocha", "../node_modules/mocha-scenarios"]
   }
 }

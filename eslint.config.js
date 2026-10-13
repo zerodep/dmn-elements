@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import globals from 'globals';
+import testGlobals from 'mocha-scenarios/globals';
 
 const rules = {
   'dot-notation': [2, { allowKeywords: true }],
@@ -92,15 +93,7 @@ export default [
         ...globals.node,
         ...globals.mocha,
         expect: 'readonly',
-        beforeEachScenario: 'readonly',
-        Buffer: 'readonly',
-        Feature: 'readonly',
-        Scenario: 'readonly',
-        Given: 'readonly',
-        When: 'readonly',
-        Then: 'readonly',
-        And: 'readonly',
-        But: 'readonly',
+        ...testGlobals,
       },
     },
     rules: {
