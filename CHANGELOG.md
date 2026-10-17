@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.1 - 2026-10-17
+
+- add `browser` directive
+
 ## v0.4.0 - 2026-10-13
 
 ### Added
